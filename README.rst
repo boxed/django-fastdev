@@ -17,7 +17,7 @@ Django templates by default hide errors, and when it does show an error it's oft
 
 instead of rendering that as an empty string, this app will give you an error message:
 
-.. code
+.. code::
 
     does_not_exist does not exist in context. Available top level variables:
 
