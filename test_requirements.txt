@@ -1,2 +1,3 @@
 hammett
 pytest-django
+django

@@ -9,7 +9,10 @@
       <excludeFolder url="file://$MODULE_DIR$/django_fastdev.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (django-fastdev)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="pytest" />
   </component>
 </module>

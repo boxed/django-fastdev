@@ -21,10 +21,10 @@ class FastDevConfig(AppConfig):
                 except VariableDoesNotExist as e:
                     if len(self.var.lookups) == 1:
                         available = '\n    '.join(sorted(context.flatten().keys()))
-                        assert False, f'''{self.var} does not exist in context. Available top level variables:
+                        raise VariableDoesNotExist(f'''{self.var} does not exist in context. Available top level variables:
 
     {available}
-'''
+''')
                     else:
                         full_name = '.'.join(self.var.lookups)
                         bit, current = e.params
@@ -39,7 +39,7 @@ class FastDevConfig(AppConfig):
                             error = f'{name} does not have a member {bit}'
                         available = '\n    '.join(sorted(x for x in dir(current) if not x.startswith('_')))
 
-                        assert False, f'''Tried looking up {full_name} in context
+                        raise VariableDoesNotExist(f'''Tried looking up {full_name} in context
 
 {error}
 {extra}
@@ -48,7 +48,7 @@ Available attributes:
     {available}
 
 The object was: {current!r}
-'''
+''')
 
             return orig_resolve(self, context, ignore_failures)
 

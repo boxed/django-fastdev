@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.0.2
+~~~~~
+
+* Last release broke that {% if non_existant %} should work for checking existence of a variable.
+
+
 1.0.1
 ~~~~~
 
