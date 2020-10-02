@@ -16,14 +16,15 @@ class FastDevConfig(AppConfig):
         def resolve_override(self, context, ignore_failures=False):
             if isinstance(self.var, Variable):
                 try:
+
                     self.var.resolve(context)
                 except VariableDoesNotExist as e:
                     if len(self.var.lookups) == 1:
                         available = '\n    '.join(sorted(context.flatten().keys()))
-                        raise VariableDoesNotExist(f'''{self.var} does not exist in context. Available top level variables:
+                        assert False, f'''{self.var} does not exist in context. Available top level variables:
 
     {available}
-''')
+'''
                     else:
                         full_name = '.'.join(self.var.lookups)
                         bit, current = e.params
@@ -38,7 +39,7 @@ class FastDevConfig(AppConfig):
                             error = f'{name} does not have a member {bit}'
                         available = '\n    '.join(sorted(x for x in dir(current) if not x.startswith('_')))
 
-                        raise VariableDoesNotExist(f'''Tried looking up {full_name} in context
+                        assert False, f'''Tried looking up {full_name} in context
 
 {error}
 {extra}
@@ -46,8 +47,8 @@ Available attributes:
 
     {available}
 
-The object was: {current}
-''')
+The object was: {current!r}
+'''
 
             return orig_resolve(self, context, ignore_failures)
 
