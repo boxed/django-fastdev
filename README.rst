@@ -6,6 +6,12 @@ Django-fastdev is an app that makes it faster and more fun to develop Django app
 Features
 --------
 
+Faster runserver
+~~~~~~~~~~~~~~~~
+
+Django-fastdev turns off the model validation of the runserver. This makes the runserver *much* faster to start/restart, and you aren't editing your models 90% of the time anyway, and when you do and have a problem, the error messages from Django are fairly understandable anyway.
+
+
 Saner templates
 ~~~~~~~~~~~~~~~
 
