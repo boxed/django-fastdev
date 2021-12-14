@@ -79,7 +79,7 @@ setup(
     url='https://github.com/boxed/django-fastdev',
     packages=['django_fastdev'],
     include_package_data=True,
-    install_requires=['Django >= 2.0'] + read_reqs('requirements.txt'),
+    install_requires=['Django >= 2.0'],
     license="BSD",
     zip_safe=False,
     keywords='django',

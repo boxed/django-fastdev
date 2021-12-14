@@ -1,4 +1,4 @@
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 
 default_app_config = 'django_fastdev.django_app.FastDevConfig'
