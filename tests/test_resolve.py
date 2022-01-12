@@ -84,3 +84,7 @@ The object was: {'c': 2}
 
 def test_if_does_not_fire_exception():
     render(req('get'), template_name='test_if_does_not_fire_exception.html')
+
+
+def test_firstof_does_not_fire_exception():
+    render(req('get'), template_name='test_firstof_does_not_fire_exception.html')

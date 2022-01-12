@@ -1,9 +1,11 @@
 from django.apps import AppConfig
 from django.template.base import (
     FilterExpression,
+    render_value_in_context,
     Variable,
     VariableDoesNotExist,
 )
+from django.template.defaulttags import FirstOfNode
 
 
 class FastDevConfig(AppConfig):
@@ -13,7 +15,10 @@ class FastDevConfig(AppConfig):
     def ready(self):
         orig_resolve = FilterExpression.resolve
 
-        def resolve_override(self, context, ignore_failures=False):
+        def resolve_override(self, context, ignore_failures=False, ignore_failures_for_real=False):
+            if ignore_failures_for_real:
+                return orig_resolve(self, context, ignore_failures=True)
+
             if isinstance(self.var, Variable):
                 try:
 
@@ -53,3 +58,17 @@ The object was: {current!r}
             return orig_resolve(self, context, ignore_failures)
 
         FilterExpression.resolve = resolve_override
+
+        def first_of_render_override(self, context):
+            first = ''
+            for var in self.vars:
+                value = var.resolve(context, ignore_failures_for_real=True)
+                if value:
+                    first = render_value_in_context(value, context)
+                    break
+            if self.asvar:
+                context[self.asvar] = first
+                return ''
+            return first
+
+        FirstOfNode.render = first_of_render_override
