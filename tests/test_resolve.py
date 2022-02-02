@@ -1,7 +1,7 @@
 import pytest
 from django.shortcuts import render
-from django.template import VariableDoesNotExist
 
+from django_fastdev.django_app import FastDevVariableDoesNotExist
 from tests import req
 
 
@@ -10,7 +10,7 @@ def test_fall_through():
 
 
 def test_resolve_simple():
-    with pytest.raises(VariableDoesNotExist) as e:
+    with pytest.raises(FastDevVariableDoesNotExist) as e:
         render(req('GET'), template_name='test_resolve_simple.html')
 
     assert str(e.value) == '''does_not_exist does not exist in context. Available top level variables:
@@ -36,7 +36,7 @@ def test_resolve_nested():
         def __init__(self):
             self.bar = Bar()
 
-    with pytest.raises(VariableDoesNotExist) as e:
+    with pytest.raises(FastDevVariableDoesNotExist) as e:
         render(req('GET'), template_name='test_resolve_nested.html', context=dict(foo=Foo()))
 
     assert str(e.value) == '''Tried looking up foo.bar.does_not_exist in context
@@ -53,7 +53,7 @@ The object was: <repr of Bar>
 
 
 def test_resolve_dict():
-    with pytest.raises(VariableDoesNotExist) as e:
+    with pytest.raises(FastDevVariableDoesNotExist) as e:
         render(req('GET'), template_name='test_resolve_dict.html', context=dict(a=dict(b=dict(c=2))))
 
     assert str(e.value) == '''Tried looking up a.b.does_not_exist in context
