@@ -34,12 +34,10 @@ class FastDevConfig(AppConfig):
     verbose_name = 'django-fastdev'
 
     def ready(self):
-        _local.ignore_errors = False
-
         orig_resolve = FilterExpression.resolve
 
         def resolve_override(self, context, ignore_failures=False, ignore_failures_for_real=False):
-            if ignore_failures_for_real or _local.ignore_errors:
+            if ignore_failures_for_real or getattr(_local, 'ignore_errors', False):
                 return orig_resolve(self, context, ignore_failures=True)
 
             if isinstance(self.var, Variable):

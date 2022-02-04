@@ -67,3 +67,6 @@ run-examples: venv
 
 test-live:
 	watchmedo shell-command --patterns="*.py" --command="python -m hammett" iommi tests
+
+release:
+	rm -rf dist/ && python setup.py sdist && twine upload dist/*
