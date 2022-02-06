@@ -42,6 +42,12 @@ instead of rendering that as an empty string, this app will give you an error me
 There are more specialized error messages for when you try to access the contents of a `dict`, and attributes of an object a few levels deep like `foo.bar.baz` (where baz doesn't exist).
 
 
+Better error messages for reverse
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The standard error message for a bad `reverse()`/`{% url %}` are rather sparse. `Django-fastdev` improves them by listing valid patterns so you can easily see the problem.
+
+
 Usage
 ------
 

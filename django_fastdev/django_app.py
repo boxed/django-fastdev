@@ -1,4 +1,5 @@
 import threading
+import inspect
 from contextlib import contextmanager
 
 from django.apps import AppConfig
@@ -11,7 +12,7 @@ from django.template.defaulttags import (
     FirstOfNode,
     IfNode,
 )
-
+from django.urls.exceptions import NoReverseMatch
 
 class FastDevVariableDoesNotExist(Exception):
     pass
@@ -99,3 +100,45 @@ The object was: {current!r}
                 return if_render_orig(self, context)
 
         IfNode.render = if_render_override
+
+        # Better reverse() errors
+        import django.urls.resolvers as res
+        res.NoReverseMatch = FastDevNoReverseMatch
+        import django.urls.base as bas
+        bas.NoReverseMatch = FastDevNoReverseMatchNamespace
+
+
+class FastDevNoReverseMatchNamespace(NoReverseMatch):
+
+    def __init__(self, msg):
+        from django.conf import settings
+        if settings.DEBUG:
+            frame = inspect.currentframe().f_back
+            resolver = frame.f_locals['resolver']
+
+            msg += '\n\nAvailable namespaces:\n    '
+            msg += '\n    '.join(sorted(resolver.namespace_dict.keys()))
+
+        super().__init__(msg)
+
+
+class FastDevNoReverseMatch(NoReverseMatch):
+
+    def __init__(self, msg):
+        from django.conf import settings
+        if settings.DEBUG:
+            frame = inspect.currentframe().f_back
+
+            msg += '\n\nThese names exist:\n\n    '
+            
+            names = []
+
+            resolver = frame.f_locals['self']
+            for k in resolver.reverse_dict.keys():
+                if callable(k):
+                    continue
+                names.append(k)
+
+            msg += '\n    '.join(sorted(names))
+
+        super().__init__(msg)

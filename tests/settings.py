@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django_fastdev',
     'tests',
+    'tests.module',
 ]
 
 DATABASES = {
@@ -34,3 +35,5 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+ROOT_URLCONF = 'tests.urls'
