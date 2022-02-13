@@ -1,0 +1,16 @@
+{% extends "test_template_parser_throwing_bad_blocks_base.html" %}
+
+{# comments should be fine #}
+
+{% block content %}
+This gets included if the base template has a block "content"
+
+    {% block new_block %}
+        a new block inside an existing block is fine
+    {% endblock %}
+
+{% endblock %}
+
+
+    {# spaces!! #}
+

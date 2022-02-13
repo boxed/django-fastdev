@@ -1,0 +1,13 @@
+This gets included for some reason. Weird!
+
+{% extends "test_template_parser_throwing_bad_blocks_base.html" %}
+
+This gets thrown away silently by django
+
+{% block content %}
+This gets included if the base template has a block "content"
+{% endblock %}
+
+{% block doesnotexist %}
+This is an error, but gets silently ignored
+{% endblock %}
