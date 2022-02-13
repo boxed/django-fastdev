@@ -14,6 +14,7 @@ from django.template.defaulttags import (
 )
 from django.urls.exceptions import NoReverseMatch
 
+
 class FastDevVariableDoesNotExist(Exception):
     pass
 
