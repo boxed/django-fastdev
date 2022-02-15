@@ -1,6 +1,18 @@
 Changelog
 ---------
 
+1.2.1
+~~~~~
+
+* Fixed errors on non-space outside blocks feature
+
+1.2.0
+~~~~~
+
+* Errors if you have non-space outside blocks, and error if you have invalid block names when extending (fixes #5)
+
+* Make runserver run the checks but on a separate thread to make the server start faster
+
 1.1.0
 ~~~~~
 

@@ -116,10 +116,18 @@ The object was: {current!r}
         # Extends validation
         orig_extends_render = ExtendsNode.render
 
-        def extends_render(self, context):
-            compiled_parent = self.get_parent(context)
+        def collect_valid_blocks(extends_node, context):
+            compiled_parent = extends_node.get_parent(context)
+            del context.render_context[extends_node.context_key]  # remove our history of doing this
+            extends_nodes = {x for x in compiled_parent.nodelist if isinstance(x, ExtendsNode)}
+            if extends_nodes:
+                assert len(extends_nodes) == 1
+                return collect_valid_blocks(extends_nodes.pop(), context)
 
-            valid_blocks = {x.name for x in compiled_parent.nodelist if isinstance(x, BlockNode)}
+            return {x.name for x in compiled_parent.nodelist if isinstance(x, BlockNode)}
+
+        def extends_render(self, context):
+            valid_blocks = collect_valid_blocks(self, context)
             actual_blocks = {x.name for x in self.nodelist if isinstance(x, BlockNode)}
             invalid_blocks = actual_blocks - valid_blocks
             if invalid_blocks:

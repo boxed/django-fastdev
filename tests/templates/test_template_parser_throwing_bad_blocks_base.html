@@ -1,3 +1,5 @@
-This is included
+{% extends "test_template_parser_throwing_bad_blocks_base_base.html" %}
 
-{% block content %}{% endblock %}
+{% block content %}
+    {% block content2 %}{% endblock %}
+{% endblock %}
