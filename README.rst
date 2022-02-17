@@ -41,6 +41,22 @@ instead of rendering that as an empty string, this app will give you an error me
 
 There are more specialized error messages for when you try to access the contents of a `dict`, and attributes of an object a few levels deep like `foo.bar.baz` (where baz doesn't exist).
 
+NoReverseMatch errors
+~~~~~~~~~~~~~~~~~~~~~
+
+Have you ever gotten this error?
+
+.. code::
+
+    django.urls.exceptions.NoReverseMatch: Reverse for 'view-name' with arguments '('',)' not found. 1 pattern(s) tried:
+
+
+it's because you have `{% url 'view-name' does_not_exist %}`. Django sees
+`does_not_exist` and evaluates it to the empty string because it doesn't exist.
+So that's why you get an error message that makes no sense. Django-fastdev will
+make your code crash on the actual error: `does_not_exist` doesn't exist.
+
+
 Error if you have non-space text outside a block when extending
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -90,6 +106,17 @@ Better error messages for reverse
 The standard error message for a bad `reverse()`/`{% url %}` are rather sparse.
 `Django-fastdev` improves them by listing valid patterns so you can easily see
 the problem.
+
+
+Validate clean_* methods
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A common mistake is to make a form clean method and make a spelling error. By
+defauld Django just won't call the function. With `django-fastdev` you will get
+an error message telling you that your clean method doesn't match anything.
+
+This is also very useful during refactoring. Renaming a field is a lot safer
+as if you forget to rename the clean method `django-fastdev` will tell you!
 
 
 Faster startup

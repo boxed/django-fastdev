@@ -3,6 +3,7 @@ import inspect
 from contextlib import contextmanager
 
 from django.apps import AppConfig
+from django.forms import Form
 from django.template.base import (
     FilterExpression,
     TextNode,
@@ -142,6 +143,30 @@ The object was: {current!r}
             return orig_extends_render(self, context)
 
         ExtendsNode.render = extends_render
+
+        # Forms validation
+        orig_form_init = Form.__init__
+
+        def fastdev_form_init(self, *args, **kwargs):
+            orig_form_init(self, *args, **kwargs)
+
+            from django.conf import settings
+            if settings.DEBUG:
+                prefix = 'clean_'
+                for name in dir(self):
+                    print(name)
+                    if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
+                        fields = '\n    '.join(sorted(self.fields.keys()))
+
+                        raise InvalidCleanMethod(f"""Clean method {name} won't apply to any field. Available fields:
+
+    {fields}""")
+
+        Form.__init__ = fastdev_form_init
+
+
+class InvalidCleanMethod(Exception):
+    pass
 
 
 class FastDevNoReverseMatchNamespace(NoReverseMatch):
