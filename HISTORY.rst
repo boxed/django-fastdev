@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+1.3.0
+~~~~~
+
+* Validate `clean_*` methods
+
 1.2.1
 ~~~~~
 
