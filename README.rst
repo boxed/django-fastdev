@@ -7,7 +7,7 @@ Features
 --------
 
 
-Error on non-existant template variables
+Error on non-existent template variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Django templates by default hide errors, and when it does show an error it's often not very helpful. This app will change this so that if you do:
