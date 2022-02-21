@@ -12,6 +12,7 @@ def test_template_parser_bad_blocks():
 
 Valid blocks:
 
+    body
     content"""
 
 
