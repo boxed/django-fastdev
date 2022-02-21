@@ -103,6 +103,13 @@ The standard error message for a bad `reverse()`/`{% url %}` are rather sparse.
 the problem.
 
 
+Better error messages for QuerySet.get()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The error message for `QuerySet.get()` is improved to give you the query
+parameters that resulted in the exception.
+
+
 Validate clean_* methods
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
