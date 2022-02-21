@@ -3,6 +3,7 @@ import inspect
 from contextlib import contextmanager
 
 from django.apps import AppConfig
+from django.db.models import QuerySet
 from django.forms import Form
 from django.template.base import (
     FilterExpression,
@@ -117,6 +118,13 @@ The object was: {current!r}
         # Extends validation
         orig_extends_render = ExtendsNode.render
 
+        def collect_nested_blocks(block_node, result):
+            result.add(block_node.name)
+            for x in block_node.nodelist:
+                if isinstance(x, BlockNode):
+                    collect_nested_blocks(x, result)
+            return result
+
         def collect_valid_blocks(extends_node, context):
             compiled_parent = extends_node.get_parent(context)
             del context.render_context[extends_node.context_key]  # remove our history of doing this
@@ -125,7 +133,11 @@ The object was: {current!r}
                 assert len(extends_nodes) == 1
                 return collect_valid_blocks(extends_nodes.pop(), context)
 
-            return {x.name for x in compiled_parent.nodelist if isinstance(x, BlockNode)}
+            result = set()
+            for x in compiled_parent.nodelist:
+                if isinstance(x, BlockNode):
+                    collect_nested_blocks(x, result)
+            return result
 
         def extends_render(self, context):
             valid_blocks = collect_valid_blocks(self, context)
@@ -163,6 +175,31 @@ The object was: {current!r}
     {fields}""")
 
         Form.__init__ = fastdev_form_init
+
+        # QuerySet error messages
+        orig_queryset_get = QuerySet.get
+
+        def fixup_query_exception(e, args, kwargs):
+            assert len(e.args) == 1
+            message = e.args[0]
+            if args:
+                message += f'\n\nQuery args:\n\n    {args}'
+            if kwargs:
+                kwargs = '\n    '.join([f'{k}: {v!r}' for k, v in kwargs.items()])
+                message += f'\n\nQuery kwargs:\n\n    {kwargs}'
+            e.args = (message,)
+
+        def fast_dev_get(self, *args, **kwargs):
+            try:
+                return orig_queryset_get(self, *args, **kwargs)
+            except self.model.DoesNotExist as e:
+                fixup_query_exception(e, args, kwargs)
+                raise
+            except self.model.MultipleObjectsReturned as e:
+                fixup_query_exception(e, args, kwargs)
+                raise
+
+        QuerySet.get = fast_dev_get
 
 
 class InvalidCleanMethod(Exception):
