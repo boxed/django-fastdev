@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+1.4.0
+~~~~~
+
+* Invalid block checks corrected. The old check gave errors for valid stuff in some situations.
+
+* New feature: QuerySet.get() improved error message.
+
 1.3.0
 ~~~~~
 
