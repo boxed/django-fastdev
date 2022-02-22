@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from django.apps import AppConfig
 from django.db.models import QuerySet
 from django.forms import Form
+from django.template import Context
 from django.template.base import (
     FilterExpression,
     TextNode,
@@ -66,6 +67,9 @@ class FastDevConfig(AppConfig):
                     else:
                         full_name = '.'.join(self.var.lookups)
                         extra = ''
+
+                        if isinstance(current, Context):
+                            current = current.flatten()
 
                         if isinstance(current, dict):
                             available_keys = '\n    '.join(sorted(current.keys()))
