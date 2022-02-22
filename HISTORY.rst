@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+1.4.1
+~~~~~
+
+* Fixed error message when trying to access `Context` object
+
 1.4.0
 ~~~~~
 
