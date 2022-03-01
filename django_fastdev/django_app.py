@@ -119,47 +119,6 @@ The object was: {current!r}
         import django.urls.base as bas
         bas.NoReverseMatch = FastDevNoReverseMatchNamespace
 
-        # Extends validation
-        orig_extends_render = ExtendsNode.render
-
-        def collect_nested_blocks(block_node, result):
-            result.add(block_node.name)
-            for x in block_node.nodelist:
-                if isinstance(x, BlockNode):
-                    collect_nested_blocks(x, result)
-            return result
-
-        def collect_valid_blocks(extends_node, context):
-            compiled_parent = extends_node.get_parent(context)
-            del context.render_context[extends_node.context_key]  # remove our history of doing this
-            extends_nodes = {x for x in compiled_parent.nodelist if isinstance(x, ExtendsNode)}
-            if extends_nodes:
-                assert len(extends_nodes) == 1
-                return collect_valid_blocks(extends_nodes.pop(), context)
-
-            result = set()
-            for x in compiled_parent.nodelist:
-                if isinstance(x, BlockNode):
-                    collect_nested_blocks(x, result)
-            return result
-
-        def extends_render(self, context):
-            valid_blocks = collect_valid_blocks(self, context)
-            actual_blocks = {x.name for x in self.nodelist if isinstance(x, BlockNode)}
-            invalid_blocks = actual_blocks - valid_blocks
-            if invalid_blocks:
-                invalid_names = '    ' + '\n    '.join(sorted(invalid_blocks))
-                valid_names = '    ' + '\n    '.join(sorted(valid_blocks))
-                raise Exception(f'Invalid blocks specified:\n\n{invalid_names}\n\nValid blocks:\n\n{valid_names}')
-
-            # TODO: validate no thrown away (non-whitespace) text blocks! And write a test for that!
-            thrown_away_text = '\n    '.join([repr(x.s.strip()) for x in self.nodelist if isinstance(x, TextNode) and x.s.strip()])
-            assert not thrown_away_text, f'The following html was thrown away when rendering {self.origin.template_name}:\n\n    {thrown_away_text}'
-
-            return orig_extends_render(self, context)
-
-        ExtendsNode.render = extends_render
-
         # Forms validation
         orig_form_init = Form.__init__
 

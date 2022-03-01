@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.4.2
+~~~~~
+
+* Removed invalid block check. It didn't work properly.
+
+
 1.4.1
 ~~~~~
 
