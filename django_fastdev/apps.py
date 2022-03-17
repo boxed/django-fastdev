@@ -42,6 +42,7 @@ def ignore_template_errors():
 class FastDevConfig(AppConfig):
     name = 'django_fastdev'
     verbose_name = 'django-fastdev'
+    default = True
 
     def ready(self):
         orig_resolve = FilterExpression.resolve

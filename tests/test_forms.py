@@ -4,7 +4,7 @@ from django.forms import (
     Form,
 )
 
-from django_fastdev.django_app import InvalidCleanMethod
+from django_fastdev.apps import InvalidCleanMethod
 
 
 def test_ok_form_works(settings):

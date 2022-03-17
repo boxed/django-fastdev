@@ -3,7 +3,7 @@ __version__ = '1.4.2'
 from threading import Thread
 from time import sleep
 
-default_app_config = 'django_fastdev.django_app.FastDevConfig'
+default_app_config = 'django_fastdev.apps.FastDevConfig'
 
 
 from django.core.management.commands.runserver import Command

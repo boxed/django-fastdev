@@ -1,7 +1,7 @@
 import pytest
 from django.shortcuts import render
 
-from django_fastdev.django_app import FastDevVariableDoesNotExist
+from django_fastdev.apps import FastDevVariableDoesNotExist
 from tests import req
 
 
