@@ -3,7 +3,8 @@ from django.conf import settings
 import pytest
 from django.shortcuts import render
 from django.core.checks import Error
-from django_fastdev.django_app import FastDevVariableDoesNotExist, check_migrations_in_gitignore, get_gitignore_path,resolve_migrations_in_gitignore
+
+from django_fastdev.apps import FastDevVariableDoesNotExist, check_migrations_in_gitignore, get_gitignore_path,resolve_migrations_in_gitignore
 from tests import req
 
 

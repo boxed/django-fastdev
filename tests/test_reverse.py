@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from django_fastdev.django_app import (
+from django_fastdev.apps import (
     FastDevNoReverseMatch,
     FastDevNoReverseMatchNamespace,
 )

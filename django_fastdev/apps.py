@@ -6,14 +6,22 @@ from contextlib import contextmanager
 from django.apps import AppConfig
 from django.core.checks import Error, register
 from django.conf import settings
+from django.db.models import QuerySet
+from django.forms import Form
+from django.template import Context
 from django.template.base import (
     FilterExpression,
+    TextNode,
     Variable,
     VariableDoesNotExist,
 )
 from django.template.defaulttags import (
     FirstOfNode,
     IfNode,
+)
+from django.template.loader_tags import (
+    BlockNode,
+    ExtendsNode,
 )
 from django.urls.exceptions import NoReverseMatch
 
@@ -59,8 +67,9 @@ def resolve_migrations_in_gitignore(app_configs, path):
 
 
 class FastDevConfig(AppConfig):
-    name = "django_fastdev"
-    verbose_name = "django-fastdev"
+    name = 'django_fastdev'
+    verbose_name = 'django-fastdev'
+    default = True
 
     def ready(self):
 
@@ -91,6 +100,9 @@ class FastDevConfig(AppConfig):
                     else:
                         full_name = ".".join(self.var.lookups)
                         extra = ""
+
+                        if isinstance(current, Context):
+                            current = current.flatten()
 
                         if isinstance(current, dict):
                             available_keys = "\n    ".join(sorted(current.keys()))
@@ -150,6 +162,55 @@ The object was: {current!r}
         git_ignore=get_gitignore_path()
         if git_ignore:
             resolve_migrations_in_gitignore(None,git_ignore)
+
+        # Forms validation
+        orig_form_init = Form.__init__
+
+        def fastdev_form_init(self, *args, **kwargs):
+            orig_form_init(self, *args, **kwargs)
+
+            from django.conf import settings
+            if settings.DEBUG:
+                prefix = 'clean_'
+                for name in dir(self):
+                    print(name)
+                    if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
+                        fields = '\n    '.join(sorted(self.fields.keys()))
+
+                        raise InvalidCleanMethod(f"""Clean method {name} won't apply to any field. Available fields:
+
+    {fields}""")
+
+        Form.__init__ = fastdev_form_init
+
+        # QuerySet error messages
+        orig_queryset_get = QuerySet.get
+
+        def fixup_query_exception(e, args, kwargs):
+            assert len(e.args) == 1
+            message = e.args[0]
+            if args:
+                message += f'\n\nQuery args:\n\n    {args}'
+            if kwargs:
+                kwargs = '\n    '.join([f'{k}: {v!r}' for k, v in kwargs.items()])
+                message += f'\n\nQuery kwargs:\n\n    {kwargs}'
+            e.args = (message,)
+
+        def fast_dev_get(self, *args, **kwargs):
+            try:
+                return orig_queryset_get(self, *args, **kwargs)
+            except self.model.DoesNotExist as e:
+                fixup_query_exception(e, args, kwargs)
+                raise
+            except self.model.MultipleObjectsReturned as e:
+                fixup_query_exception(e, args, kwargs)
+                raise
+
+        QuerySet.get = fast_dev_get
+
+
+class InvalidCleanMethod(Exception):
+    pass
 
 
 

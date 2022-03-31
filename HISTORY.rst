@@ -1,6 +1,41 @@
 Changelog
 ---------
 
+1.4.2
+~~~~~
+
+* Removed invalid block check. It didn't work properly.
+
+
+1.4.1
+~~~~~
+
+* Fixed error message when trying to access `Context` object
+
+1.4.0
+~~~~~
+
+* Invalid block checks corrected. The old check gave errors for valid stuff in some situations.
+
+* New feature: QuerySet.get() improved error message.
+
+1.3.0
+~~~~~
+
+* Validate `clean_*` methods
+
+1.2.1
+~~~~~
+
+* Fixed errors on non-space outside blocks feature
+
+1.2.0
+~~~~~
+
+* Errors if you have non-space outside blocks, and error if you have invalid block names when extending (fixes #5)
+
+* Make runserver run the checks but on a separate thread to make the server start faster
+
 1.1.0
 ~~~~~
 
