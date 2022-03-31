@@ -1,7 +1,9 @@
+import os
+from django.conf import settings
 import pytest
 from django.shortcuts import render
-
-from django_fastdev.django_app import FastDevVariableDoesNotExist
+from django.core.checks import Error
+from django_fastdev.django_app import FastDevVariableDoesNotExist, check_migrations_in_gitignore, get_gitignore_path,resolve_migrations_in_gitignore
 from tests import req
 
 
@@ -88,3 +90,14 @@ def test_if_does_not_fire_exception():
 
 def test_firstof_does_not_fire_exception():
     render(req('get'), template_name='test_firstof_does_not_fire_exception.html')
+
+def test_if_gitignore_has_migrations():
+    lines=['migrations/']
+    errors=check_migrations_in_gitignore(lines)
+    errors_expected=Error("Don't git ignore migration files.", hint="You should never gitignore migrations.")
+    assert errors==errors_expected
+
+def test_if_gitignore_doesnt_have_migrations():
+    lines=['not_migrations/']
+    errors=check_migrations_in_gitignore(lines)
+    assert errors==None
