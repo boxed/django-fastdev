@@ -1,8 +1,5 @@
-import os
-from django.conf import settings
 import pytest
 from django.shortcuts import render
-from django.core.checks import Error
 
 from django_fastdev.apps import FastDevVariableDoesNotExist, check_for_migrations_in_gitignore
 from tests import req
