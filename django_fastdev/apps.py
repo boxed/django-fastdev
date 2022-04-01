@@ -59,24 +59,22 @@ def check_for_migrations_in_gitignore(lines):
         if re.findall(r"\bmigrations\b", line):
             bad_line_numbers.append(index + 1)
     if bad_line_numbers:
-        return Error(
-            f"""
+        return f"""
         You have excluded migrations folders from git
 
         This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly. 
 
         https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
 
-        Bad pattern on lines : {', '.join(map(str, bad_line_numbers))}""",
-        hint="You should never gitignore migrations."
-        )
-
+        Bad pattern on lines : {', '.join(map(str, bad_line_numbers))}"""
 
 
 def validate_gitignore(app_configs, path):
     with open(path, "r") as git_ignore_file:
         lines = [line for line in git_ignore_file.readlines()]
-        check_for_migrations_in_gitignore(lines)
+        errors = check_for_migrations_in_gitignore(lines)
+        if errors:
+            print(errors)
 
 
 class FastDevConfig(AppConfig):
@@ -206,7 +204,7 @@ The object was: {current!r}
         QuerySet.get = fast_dev_get
 
         # Gitignore validation
-        git_ignore=get_gitignore_path()
+        git_ignore = get_gitignore_path()
         if git_ignore:
             validate_gitignore(None,git_ignore)
 

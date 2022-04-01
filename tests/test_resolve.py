@@ -93,15 +93,14 @@ def test_firstof_does_not_fire_exception():
 def test_if_gitignore_has_migrations():
     lines = ['migrations/']
     errors = check_for_migrations_in_gitignore(lines)
-    errors_expected = Error("""
+    errors_expected = """
         You have excluded migrations folders from git
 
         This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly. 
 
         https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
 
-        Bad pattern on lines : 1""",
-                hint = "You should never gitignore migrations.",)
+        Bad pattern on lines : 1"""
     assert errors == errors_expected
 
 def test_if_gitignore_doesnt_have_migrations():
