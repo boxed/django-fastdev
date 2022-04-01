@@ -1,8 +1,9 @@
 import pytest
 from django.shortcuts import render
 
-from django_fastdev.apps import FastDevVariableDoesNotExist
+from django_fastdev.apps import FastDevVariableDoesNotExist, check_for_migrations_in_gitignore
 from tests import req
+from django.core.checks import Error
 
 
 def test_fall_through():
@@ -88,3 +89,21 @@ def test_if_does_not_fire_exception():
 
 def test_firstof_does_not_fire_exception():
     render(req('get'), template_name='test_firstof_does_not_fire_exception.html')
+
+def test_if_gitignore_has_migrations():
+    lines = ['migrations/']
+    errors = check_for_migrations_in_gitignore(lines)
+    errors_expected = """
+        You have excluded migrations folders from git
+
+        This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly. 
+
+        https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
+
+        Bad pattern on lines : 1"""
+    assert errors == errors_expected
+
+def test_if_gitignore_doesnt_have_migrations():
+    lines = ['not_migrations/']
+    errors = check_for_migrations_in_gitignore(lines)
+    assert errors == None
