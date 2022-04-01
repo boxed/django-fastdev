@@ -1,10 +1,10 @@
 import os
+import re
 import threading
 import inspect
 from contextlib import contextmanager
 
 from django.apps import AppConfig
-from django.core.checks import Error, register
 from django.conf import settings
 from django.db.models import QuerySet
 from django.forms import Form
@@ -24,7 +24,7 @@ from django.template.loader_tags import (
     ExtendsNode,
 )
 from django.urls.exceptions import NoReverseMatch
-
+from django.core.checks import Error
 
 class FastDevVariableDoesNotExist(Exception):
     pass
@@ -45,25 +45,38 @@ def ignore_template_errors():
 def get_gitignore_path():
     try:
         path = settings.BASE_DIR
-    except ImportError:
+    except AttributeError:
         path = settings.ROOT_DIR
-    if os.path.isfile(os.path.join(path,".gitignore")):
-        return os.path.join(path,".gitignore")
+    if os.path.isfile(os.path.join(path, ".gitignore")):
+        return os.path.join(path, ".gitignore")
     else:
         return None
 
-def check_migrations_in_gitignore(lines):
-    migration_variation = ["migrations/"]
-    for line in lines:
-        if line.strip() in migration_variation:
-            return Error("Don't git ignore migration files.", hint="You should never gitignore migrations.")
 
-def resolve_migrations_in_gitignore(app_configs, path):
-    with open(
-        path, "r"
-    ) as git_ignore_file:
-        lines=[line for line in git_ignore_file.readlines()]
-        check_migrations_in_gitignore(lines)
+def check_for_migrations_in_gitignore(lines):
+    bad_line_numbers = []
+    for (index, line) in enumerate(lines):
+        if re.findall(r"\bmigrations\b", line):
+            bad_line_numbers.append(index + 1)
+    if bad_line_numbers:
+        return Error(
+            f"""
+        You have excluded migrations folders from git
+
+        This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly. 
+
+        https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
+
+        Bad pattern on lines : {', '.join(map(str, bad_line_numbers))}""",
+        hint="You should never gitignore migrations."
+        )
+
+
+
+def validate_gitignore(app_configs, path):
+    with open(path, "r") as git_ignore_file:
+        lines = [line for line in git_ignore_file.readlines()]
+        check_for_migrations_in_gitignore(lines)
 
 
 class FastDevConfig(AppConfig):
@@ -207,6 +220,11 @@ The object was: {current!r}
                 raise
 
         QuerySet.get = fast_dev_get
+
+        # Gitignore validation
+        git_ignore=get_gitignore_path()
+        if git_ignore:
+            validate_gitignore(None,git_ignore)
 
 
 class InvalidCleanMethod(Exception):
