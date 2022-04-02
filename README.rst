@@ -114,7 +114,7 @@ Validate clean_* methods
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 A common mistake is to make a form clean method and make a spelling error. By
-defauld Django just won't call the function. With `django-fastdev` you will get
+default Django just won't call the function. With `django-fastdev` you will get
 an error message telling you that your clean method doesn't match anything.
 
 This is also very useful during refactoring. Renaming a field is a lot safer
