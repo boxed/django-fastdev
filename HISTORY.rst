@@ -1,8 +1,10 @@
 Changelog
 ---------
 
-1.4.3
+1.5.0
 ~~~~~
+
+* .gitignore validation
 
 * Removed accidental debug print left in the code.
 
