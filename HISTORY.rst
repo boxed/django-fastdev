@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.4.3
+~~~~~
+
+* Removed accidental debug print left in the code.
+
+
 1.4.2
 ~~~~~
 
