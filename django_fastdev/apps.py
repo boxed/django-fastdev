@@ -1,7 +1,7 @@
+import inspect
 import os
 import re
 import threading
-import inspect
 from contextlib import contextmanager
 
 from django.apps import AppConfig
@@ -11,17 +11,12 @@ from django.forms import Form
 from django.template import Context
 from django.template.base import (
     FilterExpression,
-    TextNode,
     Variable,
     VariableDoesNotExist,
 )
 from django.template.defaulttags import (
     FirstOfNode,
     IfNode,
-)
-from django.template.loader_tags import (
-    BlockNode,
-    ExtendsNode,
 )
 from django.urls.exceptions import NoReverseMatch
 
@@ -200,7 +195,6 @@ The object was: {current!r}
             if settings.DEBUG:
                 prefix = 'clean_'
                 for name in dir(self):
-                    print(name)
                     if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
                         fields = '\n    '.join(sorted(self.fields.keys()))
 
