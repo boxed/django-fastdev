@@ -1,9 +1,11 @@
 import pytest
 from django.shortcuts import render
 
-from django_fastdev.apps import FastDevVariableDoesNotExist, check_for_migrations_in_gitignore
+from django_fastdev.apps import FastDevVariableDoesNotExist, check_for_migrations_in_gitignore, validate_fk_field
 from tests import req
 from django.core.checks import Error
+
+from tests.models import ModelWithInvalidFK_ID2, ModelWithInvalidFK_iD3, ModelWithInvalidFK_id1, ModelWithInvalidFKID4, ModelWithInvalidFKId5, ModelWithInvalidFKiD6, ModelWithValidFK
 
 
 def test_fall_through():
@@ -107,3 +109,35 @@ def test_if_gitignore_doesnt_have_migrations():
     lines = ['not_migrations/']
     errors = check_for_migrations_in_gitignore(lines)
     assert errors == None
+
+def test_if_fk_is_not_valid():
+    expected_error = [
+        'base_model_id',
+        'base_model_ID',
+        'base_model_iD',
+        'base_modelID',
+        'base_modelId',
+        'base_modeliD']
+
+    error_with_invalid_id = validate_fk_field(ModelWithInvalidFK_id1)[0]
+    assert error_with_invalid_id in expected_error
+
+    error_with_invalid_ID = validate_fk_field(ModelWithInvalidFK_ID2)[0]
+    assert error_with_invalid_ID in expected_error
+
+    error_with_invalid_iD = validate_fk_field(ModelWithInvalidFK_iD3)[0]
+    assert error_with_invalid_iD in expected_error
+
+    error_with_invalidID = validate_fk_field(ModelWithInvalidFKID4)[0]
+    assert error_with_invalidID in expected_error
+
+    error_with_invalidId = validate_fk_field(ModelWithInvalidFKId5)[0]
+    assert error_with_invalidId in expected_error
+
+    error_with_invalidiD = validate_fk_field(ModelWithInvalidFKiD6)[0]
+    assert error_with_invalidiD in expected_error
+
+
+def test_if_fk_is_valid():
+    errors = validate_fk_field(ModelWithValidFK)
+    assert not errors
