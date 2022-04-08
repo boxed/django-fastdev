@@ -24,7 +24,6 @@ from django.template.loader_tags import (
     ExtendsNode,
 )
 from django.urls.exceptions import NoReverseMatch
-from django.core.checks import Error
 
 class FastDevVariableDoesNotExist(Exception):
     pass
@@ -75,6 +74,39 @@ def validate_gitignore(app_configs, path):
         errors = check_for_migrations_in_gitignore(lines)
         if errors:
             print(errors)
+
+
+def validate_fk_field(model):
+    found_problems = []
+    for field in model._meta.fields:
+        if field.get_internal_type() == "ForeignKey":
+            if field.name.endswith(("Id", "_Id", "ID", "_ID", "_id", "iD")):
+                found_problems.append(field.name)
+    return found_problems
+
+
+def get_models_with_badly_named_pk():
+    import django.apps
+
+    new_line = "\n"
+    output = ""
+
+    for model in django.apps.apps.get_models():
+        found_problems = validate_fk_field(model)
+        if found_problems:
+            output += f"""{' '*8}{model.__name__}{new_line}{''.join([f"{' '*12}- {i}{new_line}" for i in found_problems])}"""
+    if output:
+        print(
+            f"""
+        You have the following models with ForeignKey that end with 'id' in the name:
+
+{output}
+
+        This is wrong. The Django ForeignKey is a relation to a model object, not it's ID, so this is correct:
+            car = ForeignKey(Car)
+
+        Django will create a `car_id` field under the hood that is the ID of that field (normally a number)."""
+        )
 
 
 class FastDevConfig(AppConfig):
@@ -207,6 +239,10 @@ The object was: {current!r}
         git_ignore = get_gitignore_path()
         if git_ignore:
             validate_gitignore(None,git_ignore)
+
+        # ForeignKey validation
+        thread = threading.Thread(target=get_models_with_badly_named_pk)
+        thread.start()
 
 
 class InvalidCleanMethod(Exception):
