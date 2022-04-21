@@ -1,10 +1,12 @@
 Changelog
 ---------
 
-1.5.1
+1.6.0
 ~~~~~
 
 * Non-existant variable accessed inside an `{% if %}` didn't crash.
+
+* Warning on invalid fk field name. So for example using `car_id = ForeignKey(Car)` will now warn and explain what you should do.
 
 
 1.5.0

@@ -125,6 +125,7 @@ def test_if_gitignore_doesnt_have_migrations():
     errors = check_for_migrations_in_gitignore(lines)
     assert errors is None
 
+
 def test_if_fk_is_not_valid():
     expected_error = [
         'base_model_id',
