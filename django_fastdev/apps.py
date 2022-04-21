@@ -170,12 +170,23 @@ The object was: {current!r}
 
         FirstOfNode.render = first_of_render_override
 
-        # {% firstof %}
-        if_render_orig = IfNode.render
-
+        # {% if %}
         def if_render_override(self, context):
-            with ignore_template_errors():
-                return if_render_orig(self, context)
+            for condition, nodelist in self.conditions_nodelists:
+
+                with ignore_template_errors():
+                    if condition is not None:  # if / elif clause
+                        try:
+                            match = condition.eval(context)
+                        except VariableDoesNotExist:
+                            match = None
+                    else:  # else clause
+                        match = True
+
+                if match:
+                    return nodelist.render(context)
+
+            return ''
 
         IfNode.render = if_render_override
 

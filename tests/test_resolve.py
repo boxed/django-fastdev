@@ -92,6 +92,20 @@ def test_if_does_not_fire_exception():
 def test_firstof_does_not_fire_exception():
     render(req('get'), template_name='test_firstof_does_not_fire_exception.html')
 
+
+def test_crash_inside_if():
+    with pytest.raises(FastDevVariableDoesNotExist) as e:
+        render(req('GET'), template_name='test_crash_inside_if.html')
+
+    assert str(e.value) == '''does_not_exist does not exist in context. Available top level variables:
+
+    False
+    None
+    True
+    csrf_token
+'''
+
+
 def test_if_gitignore_has_migrations():
     lines = ['migrations/']
     errors = check_for_migrations_in_gitignore(lines)
@@ -105,10 +119,11 @@ def test_if_gitignore_has_migrations():
         Bad pattern on lines : 1"""
     assert errors == errors_expected
 
+
 def test_if_gitignore_doesnt_have_migrations():
     lines = ['not_migrations/']
     errors = check_for_migrations_in_gitignore(lines)
-    assert errors == None
+    assert errors is None
 
 def test_if_fk_is_not_valid():
     expected_error = [

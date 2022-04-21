@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.5.1
+~~~~~
+
+* Non-existant variable accessed inside an `{% if %}` didn't crash.
+
+
 1.5.0
 ~~~~~
 
