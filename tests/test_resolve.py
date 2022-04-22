@@ -116,7 +116,7 @@ def test_if_gitignore_has_migrations():
 def test_if_gitignore_doesnt_have_migrations():
     line = 'not_migrations/'
     errors = check_for_migrations_in_gitignore(line)
-    assert errors == None
+    assert errors == False
 
 
 def test_if_venv_is_ignored():
@@ -128,7 +128,7 @@ def test_if_venv_is_ignored():
 def test_if_venv_is_not_ignored():
     line= ''
     errors = check_for_venv_in_gitignore('venv',line)
-    assert errors == None
+    assert errors == False
 
 
 def test_if_pycache_vscode_cache_is_ignored():

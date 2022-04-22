@@ -48,16 +48,15 @@ def get_gitignore_path():
 
 
 def check_for_migrations_in_gitignore(line):
-    if re.findall(r"\bmigrations\b", line):
-        return True
+    return bool(re.search(r"\bmigrations\b", line))
 
 
 def check_for_venv_in_gitignore(venv_folder, line):
-    if re.findall(venv_folder, line):
-        return True
+    return bool(re.search(venv_folder, line))
 
 
 def check_for_pycache_vscode_cache_in_gitignore(line):
+    
     if re.findall(r"\bpycache\b", line):
         return True
     elif re.findall(r"\bvscode\b", line):
