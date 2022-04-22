@@ -92,6 +92,20 @@ def test_if_does_not_fire_exception():
 def test_firstof_does_not_fire_exception():
     render(req('get'), template_name='test_firstof_does_not_fire_exception.html')
 
+
+def test_crash_inside_if():
+    with pytest.raises(FastDevVariableDoesNotExist) as e:
+        render(req('GET'), template_name='test_crash_inside_if.html')
+
+    assert str(e.value) == '''does_not_exist does not exist in context. Available top level variables:
+
+    False
+    None
+    True
+    csrf_token
+'''
+
+
 def test_if_gitignore_has_migrations():
     line = 'migrations/'
     errors = check_for_migrations_in_gitignore(line)
@@ -113,6 +127,7 @@ def test_if_venv_is_not_ignored():
     errors = check_for_venv_in_gitignore('venv',line)
     assert errors == None
 
+
 def test_if_pycache_vscode_cache_is_ignored():
     line = 'pycache/'
     errors = check_for_pycache_vscode_cache_in_gitignore(line)
@@ -130,6 +145,7 @@ def test_if_pycache_vscode_cache_is_not_ignored():
     line = ''
     errors = check_for_pycache_vscode_cache_in_gitignore(line)
     assert errors == None
+
 
 def test_if_fk_is_not_valid():
     expected_error = [
