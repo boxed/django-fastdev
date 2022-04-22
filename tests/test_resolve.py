@@ -112,6 +112,7 @@ def test_if_gitignore_has_migrations():
     errors_expected = True
     assert errors == errors_expected
 
+
 def test_if_gitignore_doesnt_have_migrations():
     line = 'not_migrations/'
     errors = check_for_migrations_in_gitignore(line)
