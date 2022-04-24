@@ -36,40 +36,81 @@ def ignore_template_errors():
         _local.ignore_errors = False
 
 
-def get_gitignore_path():
+def get_path_for_django_project():
     try:
         path = settings.BASE_DIR
     except AttributeError:
         path = settings.ROOT_DIR
+    return path
+
+
+def get_gitignore_path():
+    path = get_path_for_django_project()
     if os.path.isfile(os.path.join(path, ".gitignore")):
         return os.path.join(path, ".gitignore")
     else:
         return None
 
 
-def check_for_migrations_in_gitignore(lines):
-    bad_line_numbers = []
-    for (index, line) in enumerate(lines):
-        if re.findall(r"\bmigrations\b", line):
-            bad_line_numbers.append(index + 1)
-    if bad_line_numbers:
-        return f"""
-        You have excluded migrations folders from git
+def check_for_migrations_in_gitignore(line):
+    return bool(re.search(r"\bmigrations\b", line))
 
-        This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly. 
 
-        https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
+def check_for_venv_in_gitignore(venv_folder, line):
+    return bool(re.search(venv_folder, line))
 
-        Bad pattern on lines : {', '.join(map(str, bad_line_numbers))}"""
+
+def check_for_pycache_in_gitignore(line):
+    return bool(re.search(r"\__pycache__\b", line))
 
 
 def validate_gitignore(app_configs, path):
-    with open(path, "r") as git_ignore_file:
-        lines = [line for line in git_ignore_file.readlines()]
-        errors = check_for_migrations_in_gitignore(lines)
-        if errors:
-            print(errors)
+    try:
+        venv_folder = os.path.basename(os.environ['VIRTUAL_ENV'])
+    except KeyError:
+        print("You are not in a virtual environment. Please run `source venv/bin/activate` before running this command.")
 
+    bad_line_numbers_for_ignoring_migration = []
+    list_of_subfolders = [f.name for f in os.scandir(get_path_for_django_project()) if f.is_dir()]
+    is_venv_ignored = False
+    is_pycache_ignored = False
+
+    with open(path, "r") as git_ignore_file:
+        for (index, line) in enumerate(git_ignore_file.readlines()):
+            
+            if check_for_migrations_in_gitignore(line):
+                bad_line_numbers_for_ignoring_migration.append(index+1)
+
+            if venv_folder:
+                if check_for_venv_in_gitignore(venv_folder,line):
+                    is_venv_ignored = True
+
+            if check_for_pycache_in_gitignore(line):
+                is_pycache_ignored = True
+            
+
+        if bad_line_numbers_for_ignoring_migration:
+            print(f"""
+            You have excluded migrations folders from git
+
+            This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly. 
+
+            https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
+
+            Bad pattern on lines : {', '.join(map(str, bad_line_numbers_for_ignoring_migration))}""")
+        
+        if not is_venv_ignored:
+            print(f"""
+            {venv_folder} is not ignored in .gitignore.
+            Please add {venv_folder} to .gitignore.
+            """)
+        
+        if not is_pycache_ignored and "__pycache__" in list_of_subfolders:
+            print(f"""
+            __pycache__ is not ignored in .gitignore.
+            Please add __pycache__ to .gitignore.
+            """)
+        
 
 def validate_fk_field(model):
     found_problems = []
@@ -102,6 +143,14 @@ def get_models_with_badly_named_pk():
 
         Django will create a `car_id` field under the hood that is the ID of that field (normally a number)."""
         )
+
+
+def get_venv_folder_name():
+    import os
+
+    path_to_venv = os.environ["VIRTUAL_ENV"]
+    venv_folder = os.path.basename(path_to_venv)
+    return venv_folder
 
 
 class FastDevConfig(AppConfig):
