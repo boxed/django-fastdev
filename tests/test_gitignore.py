@@ -1,4 +1,4 @@
-from django_fastdev.apps import FastDevVariableDoesNotExist, check_for_migrations_in_gitignore, check_for_pycache_in_gitignore, check_for_venv_in_gitignore, check_for_vscode_cache_in_gitignore
+from django_fastdev.apps import FastDevVariableDoesNotExist, check_for_migrations_in_gitignore, check_for_pycache_in_gitignore, check_for_venv_in_gitignore
 
 def test_if_gitignore_has_migrations():
     line = 'migrations/'
@@ -32,14 +32,4 @@ def test_if_pycache_is_ignored_or_not():
 
     line = ''
     errors = check_for_pycache_in_gitignore(line)
-    assert errors == False
-
-
-def test_if_vscode_cache_is_ignored_or_not():
-    line = '.vscode'
-    errors = check_for_vscode_cache_in_gitignore(line)
-    assert errors == True
-
-    line = ''
-    errors = check_for_vscode_cache_in_gitignore(line)
     assert errors == False
