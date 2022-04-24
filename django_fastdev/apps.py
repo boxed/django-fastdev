@@ -36,11 +36,16 @@ def ignore_template_errors():
         _local.ignore_errors = False
 
 
-def get_gitignore_path():
+def get_path_for_django_project():
     try:
         path = settings.BASE_DIR
     except AttributeError:
         path = settings.ROOT_DIR
+    return path
+
+
+def get_gitignore_path():
+    path = get_path_for_django_project()
     if os.path.isfile(os.path.join(path, ".gitignore")):
         return os.path.join(path, ".gitignore")
     else:
@@ -55,12 +60,11 @@ def check_for_venv_in_gitignore(venv_folder, line):
     return bool(re.search(venv_folder, line))
 
 
-def check_for_pycache_vscode_cache_in_gitignore(line):
-    
-    if re.findall(r"\bpycache\b", line):
-        return True
-    elif re.findall(r"\bvscode\b", line):
-        return True
+def check_for_pycache_in_gitignore(line):
+    return bool(re.search(r"\__pycache__\b", line))
+
+def check_for_vscode_cache_in_gitignore(line):
+    return bool(re.search(r"\bvscode\b", line))
 
 
 def validate_gitignore(app_configs, path):
@@ -70,8 +74,10 @@ def validate_gitignore(app_configs, path):
         print("You are not in a virtual environment. Please run `source venv/bin/activate` before running this command.")
 
     bad_line_numbers_for_ignoring_migration = []
+    list_of_subfolders = [f.name for f in os.scandir(get_path_for_django_project()) if f.is_dir()]
     is_venv_ignored = False
-    is_pycache_vscache_ignored = False
+    is_pycache_ignored = False
+    is_vscache_ignored = False
 
     with open(path, "r") as git_ignore_file:
         for (index, line) in enumerate(git_ignore_file.readlines()):
@@ -83,8 +89,12 @@ def validate_gitignore(app_configs, path):
                 if check_for_venv_in_gitignore(venv_folder,line):
                     is_venv_ignored = True
 
-            if check_for_pycache_vscode_cache_in_gitignore(line):
-                is_pycache_vscache_ignored = True
+            if check_for_pycache_in_gitignore(line):
+                is_pycache_ignored = True
+            
+            if check_for_vscode_cache_in_gitignore(line):
+                is_vscache_ignored = True
+            
 
         if bad_line_numbers_for_ignoring_migration:
             print(f"""
@@ -102,10 +112,16 @@ def validate_gitignore(app_configs, path):
             Please add {venv_folder} to .gitignore.
             """)
         
-        if not is_pycache_vscache_ignored:
+        if not is_pycache_ignored and "__pycache__" in list_of_subfolders:
             print(f"""
-            pycache or vscode cache are not ignored in .gitignore.
-            Please or pycache and vscode cache to .gitignore.
+            __pycache__ is not ignored in .gitignore.
+            Please add __pycache__ to .gitignore.
+            """)
+        
+        if not is_vscache_ignored and ".vscode" in list_of_subfolders:
+            print(f"""
+            .vscode cache is not ignored in .gitignore.
+            Please add .vscode cache to .gitignore.
             """)
 
 
