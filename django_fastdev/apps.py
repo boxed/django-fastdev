@@ -292,11 +292,10 @@ The object was: {current!r}
         # Gitignore validation
         git_ignore = get_gitignore_path()
         if git_ignore:
-            validate_gitignore(None,git_ignore)
+            threading.Thread(target = validate_gitignore, args = (None,git_ignore)).start()
 
         # ForeignKey validation
-        thread = threading.Thread(target=get_models_with_badly_named_pk)
-        thread.start()
+        threading.Thread(target = get_models_with_badly_named_pk).start()
 
 
 class InvalidCleanMethod(Exception):
