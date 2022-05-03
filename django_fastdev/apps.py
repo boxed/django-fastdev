@@ -305,7 +305,7 @@ The object was: {current!r}
         # Gitignore validation
         git_ignore = get_gitignore_path()
         if git_ignore:
-            threading.Thread(target=validate_gitignore, args=git_ignore).start()
+            threading.Thread(target=validate_gitignore, args=(git_ignore, )).start()
 
         # ForeignKey validation
         threading.Thread(target = get_models_with_badly_named_pk).start()
