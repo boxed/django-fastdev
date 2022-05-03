@@ -1,6 +1,16 @@
 Changelog
 ---------
 
+1.7.0
+~~~~~
+
+* New template tag: '{% ifexists foo %}{% elifexists bar %}{% else %}{% endifexists %}` to use instead of `{% if %}` to check if a variable exists in the context.
+
+* Warn if you use `{% if %}` to check for existance of a variable (really warn if it triggers false if the lookup fails)
+
+* New setting: `FASTDEV_STRICT_IF`. Set this to `True` to make `{% if %}` crash on non-existant variables. This setting will very likely break some of the Django admin, because it relies on this behavior!
+
+
 1.6.0
 ~~~~~
 

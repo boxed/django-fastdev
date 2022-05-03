@@ -86,7 +86,24 @@ The object was: {'c': 2}
 
 
 def test_if_does_not_fire_exception():
-    render(req('get'), template_name='test_if_does_not_fire_exception.html')
+    with pytest.warns(DeprecationWarning) as w:
+        render(req('get'), template_name='test_if_does_not_fire_exception.html')
+
+    warning, = w.list
+    assert str(warning.message) == 'set FASTDEV_STRICT_IF in settings, and use {% ifexists %} instead of {% if %} to check if a variable exists.'
+
+
+def test_if_fires_exception_with_strict_if(settings):
+    settings.FASTDEV_STRICT_IF = True
+    with pytest.raises(FastDevVariableDoesNotExist):
+        render(req('get'), template_name='test_if_does_not_fire_exception.html')
+
+
+def test_ifexists_does_not_fire_exception():
+    assert 'ifexists a' in render(req('get'), template_name='test_ifexists.html', context={'a': None}).content.decode()
+    assert 'ifexists b' in render(req('get'), template_name='test_ifexists.html', context={'b': None}).content.decode()
+    assert 'ifexists c' in render(req('get'), template_name='test_ifexists.html', context={'c': None}).content.decode()
+    assert 'else' in render(req('get'), template_name='test_ifexists.html').content.decode()
 
 
 def test_firstof_does_not_fire_exception():

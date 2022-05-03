@@ -1,0 +1,11 @@
+{% load fastdev %}
+
+{% ifexists a %}
+    ifexists a
+{% elifexists b %}
+    ifexists b
+{% elifexists c %}
+    ifexists c
+{% else %}
+    else
+{% endifexists %}
