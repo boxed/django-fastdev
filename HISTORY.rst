@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+
+1.7.1
+~~~~~
+
+* Fix for bug in gitignore validation
+
+
 1.7.0
 ~~~~~
 
