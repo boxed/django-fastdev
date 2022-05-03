@@ -11,6 +11,9 @@ Changelog
 * New setting: `FASTDEV_STRICT_IF`. Set this to `True` to make `{% if %}` crash on non-existant variables. This setting will very likely break some of the Django admin, because it relies on this behavior!
 
 
+* Check that the venv and pycache stuff is in .gitignore
+
+
 1.6.0
 ~~~~~
 

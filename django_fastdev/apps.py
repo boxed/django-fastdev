@@ -73,11 +73,12 @@ def check_for_pycache_in_gitignore(line):
     return bool(re.search(r"\__pycache__\b", line))
 
 
-def validate_gitignore(app_configs, path):
+def validate_gitignore(path):
     try:
         venv_folder = os.path.basename(os.environ['VIRTUAL_ENV'])
     except KeyError:
         print("You are not in a virtual environment. Please run `source venv/bin/activate` before running this command.")
+        return
 
     bad_line_numbers_for_ignoring_migration = []
     list_of_subfolders = [f.name for f in os.scandir(get_path_for_django_project()) if f.is_dir()]
@@ -96,7 +97,6 @@ def validate_gitignore(app_configs, path):
 
             if check_for_pycache_in_gitignore(line):
                 is_pycache_ignored = True
-
 
         if bad_line_numbers_for_ignoring_migration:
             print(f"""
@@ -305,7 +305,7 @@ The object was: {current!r}
         # Gitignore validation
         git_ignore = get_gitignore_path()
         if git_ignore:
-            threading.Thread(target = validate_gitignore, args = (git_ignore)).start()
+            threading.Thread(target=validate_gitignore, args=git_ignore).start()
 
         # ForeignKey validation
         threading.Thread(target = get_models_with_badly_named_pk).start()
