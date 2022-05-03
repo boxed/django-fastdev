@@ -2,7 +2,11 @@ import inspect
 import os
 import re
 import threading
-from contextlib import contextmanager
+import warnings
+from contextlib import (
+    contextmanager,
+    nullcontext,
+)
 
 from django.apps import AppConfig
 from django.conf import settings
@@ -20,20 +24,25 @@ from django.template.defaulttags import (
 )
 from django.urls.exceptions import NoReverseMatch
 
+
 class FastDevVariableDoesNotExist(Exception):
     pass
 
 
 _local = threading.local()
+_local.ignore_errors = False
+_local.deprecation_warning = None
 
 
 @contextmanager
-def ignore_template_errors():
+def ignore_template_errors(deprecation_warning=None):
     _local.ignore_errors = True
+    _local.deprecation_warning = deprecation_warning
     try:
         yield
     finally:
         _local.ignore_errors = False
+        _local.deprecation_warning = None
 
 
 def get_path_for_django_project():
@@ -77,7 +86,7 @@ def validate_gitignore(app_configs, path):
 
     with open(path, "r") as git_ignore_file:
         for (index, line) in enumerate(git_ignore_file.readlines()):
-            
+
             if check_for_migrations_in_gitignore(line):
                 bad_line_numbers_for_ignoring_migration.append(index+1)
 
@@ -87,7 +96,7 @@ def validate_gitignore(app_configs, path):
 
             if check_for_pycache_in_gitignore(line):
                 is_pycache_ignored = True
-            
+
 
         if bad_line_numbers_for_ignoring_migration:
             print(f"""
@@ -98,22 +107,23 @@ def validate_gitignore(app_configs, path):
             https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
 
             Bad pattern on lines : {', '.join(map(str, bad_line_numbers_for_ignoring_migration))}""")
-        
+
         if not is_venv_ignored:
             print(f"""
             {venv_folder} is not ignored in .gitignore.
             Please add {venv_folder} to .gitignore.
             """)
-        
+
         if not is_pycache_ignored and "__pycache__" in list_of_subfolders:
             print(f"""
             __pycache__ is not ignored in .gitignore.
             Please add __pycache__ to .gitignore.
             """)
-        
+
 
 def validate_fk_field(model):
     found_problems = []
+    # noinspection PyProtectedMember
     for field in model._meta.fields:
         if field.get_internal_type() == "ForeignKey":
             if field.name.endswith(("Id", "_Id", "ID", "_ID", "_id", "iD")):
@@ -145,6 +155,10 @@ def get_models_with_badly_named_pk():
         )
 
 
+def strict_if():
+    return getattr(settings, 'FASTDEV_STRICT_IF', False)
+
+
 def get_venv_folder_name():
     import os
 
@@ -162,16 +176,16 @@ class FastDevConfig(AppConfig):
         orig_resolve = FilterExpression.resolve
 
         def resolve_override(self, context, ignore_failures=False, ignore_failures_for_real=False):
-            if ignore_failures_for_real or getattr(_local, 'ignore_errors', False):
-                return orig_resolve(self, context, ignore_failures=True)
-
             if isinstance(self.var, Variable):
                 try:
-
                     self.var.resolve(context)
                 except FastDevVariableDoesNotExist:
                     raise
                 except VariableDoesNotExist as e:
+                    if ignore_failures_for_real or getattr(_local, 'ignore_errors', False):
+                        if _local.deprecation_warning:
+                            warnings.warn(_local.deprecation_warning, category=DeprecationWarning)
+                        return orig_resolve(self, context, ignore_failures=True)
                     bit, current = e.params
                     if len(self.var.lookups) == 1:
                         available = '\n    '.join(sorted(context.flatten().keys()))
@@ -222,8 +236,7 @@ The object was: {current!r}
         # {% if %}
         def if_render_override(self, context):
             for condition, nodelist in self.conditions_nodelists:
-
-                with ignore_template_errors():
+                with nullcontext() if strict_if() else ignore_template_errors(deprecation_warning='set FASTDEV_STRICT_IF in settings, and use {% ifexists %} instead of {% if %} to check if a variable exists.'):
                     if condition is not None:  # if / elif clause
                         try:
                             match = condition.eval(context)
@@ -292,7 +305,7 @@ The object was: {current!r}
         # Gitignore validation
         git_ignore = get_gitignore_path()
         if git_ignore:
-            threading.Thread(target = validate_gitignore, args = (None,git_ignore)).start()
+            threading.Thread(target = validate_gitignore, args = (git_ignore)).start()
 
         # ForeignKey validation
         threading.Thread(target = get_models_with_badly_named_pk).start()
