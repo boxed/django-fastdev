@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+1.7.2
+~~~~~
+
+* Fixed: include template tags in source distribution
+
 
 1.7.1
 ~~~~~

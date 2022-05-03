@@ -1,0 +1,12 @@
+include AUTHORS.rst
+include HISTORY.rst
+include LICENSE
+include README.rst
+include requirements.txt
+exclude tests/*.*
+recursive-include django_fastdev *.*
+recursive-exclude django_fastdev *__tests.py
+recursive-exclude django_fastdev *.pyc
+recursive-exclude django_fastdev/snapshots *.*
+recursive-exclude django_fastdev testreport.xml
+prune *__tests.py
