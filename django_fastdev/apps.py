@@ -271,7 +271,7 @@ The object was: {current!r}
                     if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
                         fields = '\n    '.join(sorted(self.fields.keys()))
 
-                        raise InvalidCleanMethod(f"""Clean method {name} won't apply to any field. Available fields:
+                        raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
 
     {fields}""")
 

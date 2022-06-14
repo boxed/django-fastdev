@@ -32,4 +32,4 @@ def test_field_clean_validation(settings):
     with pytest.raises(InvalidCleanMethod) as e:
         MyForm()
 
-    assert str(e.value) == """Clean method clean_flield won't apply to any field. Available fields:\n\n    field"""
+    assert str(e.value) == """Clean method clean_flield of class MyForm won't apply to any field. Available fields:\n\n    field"""
