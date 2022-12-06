@@ -259,11 +259,10 @@ The object was: {current!r}
         bas.NoReverseMatch = FastDevNoReverseMatchNamespace
 
         # Forms validation
-        orig_form_init = Form.__init__
+        orig_form_full_clean = Form.full_clean
 
-        def fastdev_form_init(self, *args, **kwargs):
-            orig_form_init(self, *args, **kwargs)
-
+        def fastdev_full_clean(self):
+            orig_form_full_clean(self)
             from django.conf import settings
             if settings.DEBUG:
                 prefix = 'clean_'
@@ -275,7 +274,7 @@ The object was: {current!r}
 
     {fields}""")
 
-        Form.__init__ = fastdev_form_init
+        Form.full_clean = fastdev_full_clean
 
         # QuerySet error messages
         orig_queryset_get = QuerySet.get
