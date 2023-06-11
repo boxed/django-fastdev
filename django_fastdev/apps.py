@@ -51,7 +51,7 @@ def get_path_for_django_project() -> Path:
         path = settings.BASE_DIR
     except AttributeError:
         path = settings.ROOT_DIR
-    return Path(path)
+    return Path(path).resolve(strict=True)
 
 
 def get_gitignore_path():
@@ -66,8 +66,11 @@ def check_for_migrations_in_gitignore(line):
     return bool(re.search(r"\bmigrations\b", line))
 
 
-def check_for_venv_in_gitignore(venv_folder, line):
-    return bool(re.search(venv_folder, line))
+def check_for_venv_in_gitignore(venv_directory_parts, line):
+    for part in venv_directory_parts:
+        if re.search(part, line):
+            return True
+    return False
 
 
 def check_for_pycache_in_gitignore(line):
@@ -77,16 +80,19 @@ def check_for_pycache_in_gitignore(line):
 def validate_gitignore(path):
     project_path = get_path_for_django_project()
     try:
-        venv_folder = Path(os.environ['VIRTUAL_ENV'])
-        if project_path not in venv_folder.parents:
-            venv_folder = None
+        venv_directory = Path(os.environ['VIRTUAL_ENV']).resolve(strict=True)
+        try:
+            venv_directory_parts = venv_directory.relative_to(project_path).parts
+        except ValueError:
+            # venv is not in project directory
+            venv_directory_parts = tuple()
     except KeyError:
         print("Please activate your virtual environment before running this command.")
         return
 
     bad_line_numbers_for_ignoring_migration = []
     list_of_subfolders = [f.name for f in os.scandir(project_path) if f.is_dir()]
-    is_venv_ignored = False
+    is_venv_ignored = not venv_directory_parts  # we consider it being ignored when not in the project directory
     is_pycache_ignored = False
 
     with open(path, "r") as git_ignore_file:
@@ -95,9 +101,8 @@ def validate_gitignore(path):
             if check_for_migrations_in_gitignore(line):
                 bad_line_numbers_for_ignoring_migration.append(index+1)
 
-            if venv_folder:
-                if check_for_venv_in_gitignore(venv_folder.name, line):
-                    is_venv_ignored = True
+            if check_for_venv_in_gitignore(venv_directory_parts, line):
+                is_venv_ignored =  True
 
             if check_for_pycache_in_gitignore(line):
                 is_pycache_ignored = True
@@ -114,8 +119,8 @@ def validate_gitignore(path):
 
         if not is_venv_ignored:
             print(f"""
-            {venv_folder} is not ignored in .gitignore.
-            Please add {venv_folder} to .gitignore.
+            {venv_directory_parts[0]} is not ignored in .gitignore.
+            Please add {venv_directory_parts[0]} to .gitignore.
             """)
 
         if not is_pycache_ignored and "__pycache__" in list_of_subfolders:
