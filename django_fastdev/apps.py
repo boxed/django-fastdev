@@ -7,6 +7,7 @@ from contextlib import (
     contextmanager,
     nullcontext,
 )
+from pathlib import Path
 
 from django.apps import AppConfig
 from django.conf import settings
@@ -45,12 +46,12 @@ def ignore_template_errors(deprecation_warning=None):
         _local.deprecation_warning = None
 
 
-def get_path_for_django_project():
+def get_path_for_django_project() -> Path:
     try:
         path = settings.BASE_DIR
     except AttributeError:
         path = settings.ROOT_DIR
-    return path
+    return Path(path)
 
 
 def get_gitignore_path():
@@ -74,14 +75,17 @@ def check_for_pycache_in_gitignore(line):
 
 
 def validate_gitignore(path):
+    project_path = get_path_for_django_project()
     try:
-        venv_folder = os.path.basename(os.environ['VIRTUAL_ENV'])
+        venv_folder = Path(os.environ['VIRTUAL_ENV'])
+        if project_path not in venv_folder.parents:
+            venv_folder = None
     except KeyError:
-        print("You are not in a virtual environment. Please run `source venv/bin/activate` before running this command.")
+        print("Please activate your virtual environment before running this command.")
         return
 
     bad_line_numbers_for_ignoring_migration = []
-    list_of_subfolders = [f.name for f in os.scandir(get_path_for_django_project()) if f.is_dir()]
+    list_of_subfolders = [f.name for f in os.scandir(project_path) if f.is_dir()]
     is_venv_ignored = False
     is_pycache_ignored = False
 
@@ -92,7 +96,7 @@ def validate_gitignore(path):
                 bad_line_numbers_for_ignoring_migration.append(index+1)
 
             if venv_folder:
-                if check_for_venv_in_gitignore(venv_folder,line):
+                if check_for_venv_in_gitignore(venv_folder.name, line):
                     is_venv_ignored = True
 
             if check_for_pycache_in_gitignore(line):
