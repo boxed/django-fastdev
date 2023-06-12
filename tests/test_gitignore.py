@@ -14,14 +14,18 @@ def test_if_gitignore_doesnt_have_migrations():
 
 
 def test_if_venv_is_ignored():
-    line= 'venv/'
-    errors = check_for_venv_in_gitignore('venv',line)
+    line = 'venv/'
+    errors = check_for_venv_in_gitignore(['venv'], line)
     assert errors == True
 
+def test_if_venv_in_multiple_parts_is_ignored():
+    line = '.direnv'
+    errors = check_for_venv_in_gitignore(['.direnv', 'python-3.10'], line)
+    assert errors == True
 
 def test_if_venv_is_not_ignored():
-    line= ''
-    errors = check_for_venv_in_gitignore('venv',line)
+    line = ''
+    errors = check_for_venv_in_gitignore(['venv'],line)
     assert errors == False
 
 
