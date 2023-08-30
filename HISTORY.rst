@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.7.3
+~~~~~
+
+* Changed: only HTML templates within your main project directory are checked; HTML templates outside of your main project directory revert to standard django behavior
+
+
 1.7.2
 ~~~~~
 

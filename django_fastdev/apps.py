@@ -191,6 +191,13 @@ class FastDevConfig(AppConfig):
                 except FastDevVariableDoesNotExist:
                     raise
                 except VariableDoesNotExist as e:
+                    # worry only about templates inside our project dir; if they  
+                    # exist elsewhere, then go to standard django behavior
+                    if (
+                        'django-fastdev/tests/' not in str(context.template.origin)
+                        and not str(context.template.origin).startswith(str(settings.BASE_DIR))
+                    ):
+                        return orig_resolve(self, context, ignore_failures=ignore_failures)
                     if ignore_failures_for_real or getattr(_local, 'ignore_errors', False):
                         if _local.deprecation_warning:
                             warnings.warn(_local.deprecation_warning, category=DeprecationWarning)
