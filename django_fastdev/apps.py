@@ -201,8 +201,10 @@ class FastDevConfig(AppConfig):
                         venv_dir = os.environ.get('VIRTUAL_ENV', '')
                         if (
                             'django-fastdev/tests/' not in str(context.template.origin)
-                            and not str(context.template.origin).startswith(str(settings.BASE_DIR))
-                            and not (venv_dir and str(context.template.origin).startswith(venv_dir))
+                            and (
+                                not str(context.template.origin).startswith(str(settings.BASE_DIR))
+                                or (venv_dir and str(context.template.origin).startswith(venv_dir))
+                            )
                         ):
                             return orig_resolve(self, context, ignore_failures=ignore_failures)
                     if ignore_failures_for_real or getattr(_local, 'ignore_errors', False):
