@@ -36,6 +36,9 @@ instead of rendering that as an empty string, this app will give you an error me
 
 There are more specialized error messages for when you try to access the contents of a :code:`dict`, and attributes of an object a few levels deep like :code:`foo.bar.baz` (where baz doesn't exist).
 
+By default, :code:`django-fastdev` only checks templates that exist within your project directory. If you want it to check ALL templates, including stock django templates and templates from third party libraries, add :code:`FASTDEV_STRICT_TEMPLATE_CHECKING = True` to your project :code:`settings.py`.
+
+
 NoReverseMatch errors
 ~~~~~~~~~~~~~~~~~~~~~
 

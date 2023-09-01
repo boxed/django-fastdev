@@ -168,6 +168,10 @@ def strict_if():
     return getattr(settings, 'FASTDEV_STRICT_IF', False)
 
 
+def strict_template_checking():
+    return getattr(settings, 'FASTDEV_STRICT_TEMPLATE_CHECKING', False)
+
+
 def get_venv_folder_name():
     import os
 
@@ -191,6 +195,18 @@ class FastDevConfig(AppConfig):
                 except FastDevVariableDoesNotExist:
                     raise
                 except VariableDoesNotExist as e:
+                    if not strict_template_checking():
+                        # worry only about templates inside our project dir; if they  
+                        # exist elsewhere, then go to standard django behavior
+                        venv_dir = os.environ.get('VIRTUAL_ENV', '')
+                        if (
+                            'django-fastdev/tests/' not in str(context.template.origin)
+                            and (
+                                not str(context.template.origin).startswith(str(settings.BASE_DIR))
+                                or (venv_dir and str(context.template.origin).startswith(venv_dir))
+                            )
+                        ):
+                            return orig_resolve(self, context, ignore_failures=ignore_failures)
                     if ignore_failures_for_real or getattr(_local, 'ignore_errors', False):
                         if _local.deprecation_warning:
                             warnings.warn(_local.deprecation_warning, category=DeprecationWarning)
