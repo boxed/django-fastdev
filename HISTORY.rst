@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.7.4
+~~~~~
+
+* Strict `{% if %}` put the 500 debug page into an infinite loop
+
+
 1.7.3
 ~~~~~
 
