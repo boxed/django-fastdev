@@ -74,6 +74,7 @@ setup(
     version=read_version(),
     description='Django-fastdev is an app that makes it faster and more fun to develop Django apps',
     long_description=readme,
+    long_description_content_type='text/x-rst',
     author='Anders Hovmöller',
     author_email='boxed@killingar.net',
     url='https://github.com/boxed/django-fastdev',

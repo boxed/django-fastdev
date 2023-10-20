@@ -71,7 +71,7 @@ Django silently throws away :code:`stuff here` and :code:`</html>`. :code:`djang
 
 
 Error on invalid block names when using :code:`{% extends "..." %}`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you have a base template:
 
