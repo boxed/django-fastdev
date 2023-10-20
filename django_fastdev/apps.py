@@ -189,6 +189,10 @@ class FastDevConfig(AppConfig):
         orig_resolve = FilterExpression.resolve
 
         def resolve_override(self, context, ignore_failures=False, ignore_failures_for_real=False):
+            if context.template_name is None and '{% if exception_type %}{{ exception_type }}' in context.template.source:
+                # best guess we are in the 500 error page, do the default
+                return orig_resolve(self, context)
+
             if isinstance(self.var, Variable):
                 try:
                     self.var.resolve(context)
@@ -259,16 +263,20 @@ The object was: {current!r}
         FirstOfNode.render = first_of_render_override
 
         # {% if %}
+        orig_if_render = IfNode.render
+
         def if_render_override(self, context):
+            if not strict_if() or '{% if exception_type %}{{ exception_type }}' in context.template.source:
+                return orig_if_render(self, context)
+
             for condition, nodelist in self.conditions_nodelists:
-                with nullcontext() if strict_if() else ignore_template_errors(deprecation_warning='set FASTDEV_STRICT_IF in settings, and use {% ifexists %} instead of {% if %} to check if a variable exists.'):
-                    if condition is not None:  # if / elif clause
-                        try:
-                            match = condition.eval(context)
-                        except VariableDoesNotExist:
-                            match = None
-                    else:  # else clause
-                        match = True
+                if condition is not None:  # if / elif clause
+                    try:
+                        match = condition.eval(context)
+                    except VariableDoesNotExist:
+                        match = None
+                else:  # else clause
+                    match = True
 
                 if match:
                     return nodelist.render(context)
@@ -362,7 +370,7 @@ class FastDevNoReverseMatch(NoReverseMatch):
             frame = inspect.currentframe().f_back
 
             msg += '\n\nThese names exist:\n\n    '
-            
+
             names = []
 
             resolver = frame.f_locals['self']
