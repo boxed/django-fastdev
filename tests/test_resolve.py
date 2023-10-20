@@ -1,7 +1,11 @@
 import pytest
 from django.shortcuts import render
 
-from django_fastdev.apps import FastDevVariableDoesNotExist, validate_fk_field
+from django_fastdev.apps import (
+    FastDevVariableDoesNotExist,
+    strict_if,
+    validate_fk_field,
+)
 from tests import req
 from django.core.checks import Error
 
@@ -85,7 +89,8 @@ The object was: {'c': 2}
 '''
 
 
-def test_if_does_not_fire_exception():
+def test_if_does_not_fire_exception(settings):
+    assert not strict_if()
     with pytest.warns(DeprecationWarning) as w:
         render(req('get'), template_name='test_if_does_not_fire_exception.html')
 
@@ -97,6 +102,7 @@ def test_if_fires_exception_with_strict_if(settings):
     settings.FASTDEV_STRICT_IF = True
     with pytest.raises(FastDevVariableDoesNotExist):
         render(req('get'), template_name='test_if_does_not_fire_exception.html')
+    settings.FASTDEV_STRICT_IF = False
 
 
 def test_ifexists_does_not_fire_exception():

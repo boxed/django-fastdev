@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+1.7.6
+~~~~~
+
+* Raise exceptions from `Template('....')` type literals with unknown source file
+
 1.7.5
 ~~~~~
 

@@ -74,7 +74,7 @@ def check_for_venv_in_gitignore(venv_directory_parts, line):
 
 
 def check_for_pycache_in_gitignore(line):
-    return bool(re.search(r"\__pycache__\b", line))
+    return bool(re.search(r"__pycache__\b", line))
 
 
 def validate_gitignore(path):
@@ -200,14 +200,16 @@ class FastDevConfig(AppConfig):
                     raise
                 except VariableDoesNotExist as e:
                     if not strict_template_checking():
-                        # worry only about templates inside our project dir; if they  
+                        # worry only about templates inside our project dir; if they
                         # exist elsewhere, then go to standard django behavior
                         venv_dir = os.environ.get('VIRTUAL_ENV', '')
+                        origin = context.template.origin.name
                         if (
-                            'django-fastdev/tests/' not in str(context.template.origin)
+                            origin != '<unknown source>' and
+                            'django-fastdev/tests/' not in origin
                             and (
-                                not str(context.template.origin).startswith(str(settings.BASE_DIR))
-                                or (venv_dir and str(context.template.origin).startswith(venv_dir))
+                                not origin.startswith(str(settings.BASE_DIR))
+                                or (venv_dir and origin.startswith(venv_dir))
                             )
                         ):
                             return orig_resolve(self, context, ignore_failures=ignore_failures)
@@ -263,18 +265,18 @@ The object was: {current!r}
         FirstOfNode.render = first_of_render_override
 
         # {% if %}
-        orig_if_render = IfNode.render
-
         def if_render_override(self, context):
-            if not strict_if() or '{% if exception_type %}{{ exception_type }}' in context.template.source:
-                return orig_if_render(self, context)
-
             for condition, nodelist in self.conditions_nodelists:
                 if condition is not None:  # if / elif clause
-                    try:
-                        match = condition.eval(context)
-                    except VariableDoesNotExist:
-                        match = None
+                    context_handler = nullcontext()
+                    if not strict_if() or '{% if exception_type %}{{ exception_type }}' in context.template.source:
+                        context_handler = ignore_template_errors(deprecation_warning='set FASTDEV_STRICT_IF in settings, and use {% ifexists %} instead of {% if %} to check if a variable exists.')
+
+                    with context_handler:
+                        try:
+                            match = condition.eval(context)
+                        except VariableDoesNotExist:
+                            match = None
                 else:  # else clause
                     match = True
 
