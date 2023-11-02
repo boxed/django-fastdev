@@ -18,11 +18,13 @@ from django.template.base import (
     FilterExpression,
     Variable,
     VariableDoesNotExist,
+    TokenType,
 )
 from django.template.defaulttags import (
     FirstOfNode,
     IfNode,
 )
+from django.templatetags.i18n import BlockTranslateNode
 from django.urls.exceptions import NoReverseMatch
 
 
@@ -344,6 +346,19 @@ The object was: {current!r}
 
             # ForeignKey validation
             threading.Thread(target=get_models_with_badly_named_pk).start()
+
+
+        # Fix blocktrans
+        orig_blocktrans_render_token_list = BlockTranslateNode.render_token_list
+
+        def fastdev_render_token_list(self, tokens):
+            for token in tokens:
+                if token.token_type == TokenType.VAR:
+                    if '.' in token.contents:
+                        raise FastDevVariableDoesNotExist("You can't use dotted paths in blocktrans. You must use {% with foo = something.bar %} around the blocktrans.")
+            return orig_blocktrans_render_token_list(self, tokens)
+
+        BlockTranslateNode.render_token_list = fastdev_render_token_list
 
 
 class InvalidCleanMethod(Exception):

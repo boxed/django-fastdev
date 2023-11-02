@@ -1,4 +1,4 @@
-__version__ = '1.7.6'
+__version__ = '1.8.0'
 
 from threading import Thread
 from time import sleep

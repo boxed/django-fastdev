@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+1.8.0
+~~~~~
+
+* Adds error handling on bad usages of dotted paths in blocktrans.
+
 1.7.6
 ~~~~~
 
