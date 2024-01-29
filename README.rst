@@ -1,7 +1,7 @@
 django-fastdev
 ==============
 
-:code:`django-fastdev` is an app that makes it faster and more fun to develop Django apps.
+:code:`django-fastdev` is an app that makes it safer, faster and more fun to develop Django apps.
 
 Features
 --------
