@@ -81,16 +81,18 @@ def check_for_pycache_in_gitignore(line):
 
 def validate_gitignore(path):
     project_path = get_path_for_django_project()
-    try:
-        venv_directory = Path(os.environ['VIRTUAL_ENV']).resolve(strict=True)
+    venv_directory_parts = tuple()
+    if 'VIRTUAL_ENV' in os.environ:
         try:
-            venv_directory_parts = venv_directory.relative_to(project_path).parts
-        except ValueError:
-            # venv is not in project directory
-            venv_directory_parts = tuple()
-    except KeyError:
-        print("Please activate your virtual environment before running this command.")
-        return
+            venv_directory = Path(os.environ['VIRTUAL_ENV']).resolve(strict=True)
+            try:
+                venv_directory_parts = venv_directory.relative_to(project_path).parts
+            except ValueError:
+                # venv is not in project directory
+                venv_directory_parts = tuple()
+        except KeyError:
+            print("Gitignore validation: Please activate your virtual environment before running this command.")
+            return
 
     bad_line_numbers_for_ignoring_migration = []
     list_of_subfolders = [f.name for f in os.scandir(project_path) if f.is_dir()]
