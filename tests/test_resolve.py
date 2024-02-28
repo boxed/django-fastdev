@@ -1,5 +1,7 @@
 import pytest
 from django.shortcuts import render
+from django.template import Context
+from django.views.debug import DEBUG_ENGINE
 
 from django_fastdev.apps import (
     FastDevVariableDoesNotExist,
@@ -128,6 +130,7 @@ def test_crash_inside_if():
     csrf_token
 '''
 
+
 def test_if_fk_is_not_valid():
     expected_error = [
         'base_model_id',
@@ -159,3 +162,9 @@ def test_if_fk_is_not_valid():
 def test_if_fk_is_valid():
     errors = validate_fk_field(ModelWithValidFK)
     assert not errors
+
+
+def test_debug_engine(settings):
+    settings.FASTDEV_STRICT_IF = True
+    t = DEBUG_ENGINE.from_string('{% if does_not_exist %}{% endif %}{{ also_does_not_exist')
+    t.render(Context())

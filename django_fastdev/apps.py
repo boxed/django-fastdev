@@ -26,6 +26,7 @@ from django.template.defaulttags import (
 )
 from django.templatetags.i18n import BlockTranslateNode
 from django.urls.exceptions import NoReverseMatch
+from django.views.debug import DEBUG_ENGINE
 
 
 class FastDevVariableDoesNotExist(Exception):
@@ -106,7 +107,7 @@ def validate_gitignore(path):
                 bad_line_numbers_for_ignoring_migration.append(index+1)
 
             if check_for_venv_in_gitignore(venv_directory_parts, line):
-                is_venv_ignored =  True
+                is_venv_ignored = True
 
             if check_for_pycache_in_gitignore(line):
                 is_pycache_ignored = True
@@ -221,6 +222,10 @@ class FastDevConfig(AppConfig):
                         if _local.deprecation_warning:
                             warnings.warn(_local.deprecation_warning, category=DeprecationWarning)
                         return orig_resolve(self, context, ignore_failures=True)
+
+                    if context.template.engine == DEBUG_ENGINE:
+                        return orig_resolve(self, context, ignore_failures=ignore_failures)
+
                     bit, current = e.params
                     if len(self.var.lookups) == 1:
                         available = '\n    '.join(sorted(context.flatten().keys()))
@@ -348,7 +353,6 @@ The object was: {current!r}
 
             # ForeignKey validation
             threading.Thread(target=get_models_with_badly_named_pk).start()
-
 
         # Fix blocktrans
         orig_blocktrans_render_token_list = BlockTranslateNode.render_token_list
