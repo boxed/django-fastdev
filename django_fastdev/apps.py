@@ -1,6 +1,7 @@
 import inspect
 import os
 import re
+import sys
 import threading
 import warnings
 from contextlib import (
@@ -92,7 +93,7 @@ def validate_gitignore(path):
                 # venv is not in project directory
                 venv_directory_parts = tuple()
         except KeyError:
-            print("Gitignore validation: Please activate your virtual environment before running this command.")
+            print("Gitignore validation: Please activate your virtual environment before running this command.", file=sys.stderr)
             return
 
     bad_line_numbers_for_ignoring_migration = []
@@ -120,19 +121,19 @@ def validate_gitignore(path):
 
             https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
 
-            Bad pattern on lines : {', '.join(map(str, bad_line_numbers_for_ignoring_migration))}""")
+            Bad pattern on lines : {', '.join(map(str, bad_line_numbers_for_ignoring_migration))}""", file=sys.stderr)
 
         if not is_venv_ignored:
             print(f"""
             {venv_directory_parts[0]} is not ignored in .gitignore.
             Please add {venv_directory_parts[0]} to .gitignore.
-            """)
+            """, file=sys.stderr)
 
         if not is_pycache_ignored and "__pycache__" in list_of_subfolders:
             print(f"""
             __pycache__ is not ignored in .gitignore.
             Please add __pycache__ to .gitignore.
-            """)
+            """, file=sys.stderr)
 
 
 def validate_fk_field(model):
@@ -165,7 +166,8 @@ def get_models_with_badly_named_pk():
         This is wrong. The Django ForeignKey is a relation to a model object, not it's ID, so this is correct:
             car = ForeignKey(Car)
 
-        Django will create a `car_id` field under the hood that is the ID of that field (normally a number)."""
+        Django will create a `car_id` field under the hood that is the ID of that field (normally a number).""",
+            file=sys.stderr
         )
 
 
