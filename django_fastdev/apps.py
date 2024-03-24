@@ -1,8 +1,10 @@
 import inspect
 import os
 import re
+import subprocess
 import sys
 import threading
+from typing import Optional
 import warnings
 from contextlib import (
     contextmanager,
@@ -70,12 +72,21 @@ def check_for_migrations_in_gitignore(line):
     return bool(re.search(r"\bmigrations\b", line))
 
 
-def check_for_venv_in_gitignore(venv_directory_parts, line):
-    for part in venv_directory_parts:
-        if re.search(part, line):
-            return True
-    return False
+def is_venv_ignored(project_path: Path) -> Optional[bool]:
+    try:
+        # if sys.prefix isn't inside of get_path_for_django_project(), then consider it ignored
+        Path(sys.prefix).relative_to(project_path)
+    except ValueError:
+        return True
 
+    try:
+        # ensure git is invoked as though it were run from the project directory, since
+        # manage.py can be invoked from other directories.
+        check_ignore = subprocess.run(["git", "-C", project_path, "check-ignore", "--quiet", sys.prefix])
+        return check_ignore.returncode == 0
+    except FileNotFoundError:
+        print("git is not installed. django-fastdev can't check if venv is ignored in .gitignore", file=sys.stderr)
+        return None
 
 def check_for_pycache_in_gitignore(line):
     return bool(re.search(r"__pycache__\b", line))
@@ -83,22 +94,8 @@ def check_for_pycache_in_gitignore(line):
 
 def validate_gitignore(path):
     project_path = get_path_for_django_project()
-    venv_directory_parts = tuple()
-    if 'VIRTUAL_ENV' in os.environ:
-        try:
-            venv_directory = Path(os.environ['VIRTUAL_ENV']).resolve(strict=True)
-            try:
-                venv_directory_parts = venv_directory.relative_to(project_path).parts
-            except ValueError:
-                # venv is not in project directory
-                venv_directory_parts = tuple()
-        except KeyError:
-            print("Gitignore validation: Please activate your virtual environment before running this command.", file=sys.stderr)
-            return
-
     bad_line_numbers_for_ignoring_migration = []
     list_of_subfolders = [f.name for f in os.scandir(project_path) if f.is_dir()]
-    is_venv_ignored = not venv_directory_parts  # we consider it being ignored when not in the project directory
     is_pycache_ignored = False
 
     with open(path, "r") as git_ignore_file:
@@ -107,9 +104,6 @@ def validate_gitignore(path):
             if check_for_migrations_in_gitignore(line):
                 bad_line_numbers_for_ignoring_migration.append(index+1)
 
-            if check_for_venv_in_gitignore(venv_directory_parts, line):
-                is_venv_ignored = True
-
             if check_for_pycache_in_gitignore(line):
                 is_pycache_ignored = True
 
@@ -117,16 +111,16 @@ def validate_gitignore(path):
             print(f"""
             You have excluded migrations folders from git
 
-            This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly. 
+            This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly.
 
             https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
 
             Bad pattern on lines : {', '.join(map(str, bad_line_numbers_for_ignoring_migration))}""", file=sys.stderr)
 
-        if not is_venv_ignored:
+        if is_venv_ignored(project_path) is False:
             print(f"""
-            {venv_directory_parts[0]} is not ignored in .gitignore.
-            Please add {venv_directory_parts[0]} to .gitignore.
+            {sys.prefix} is not ignored in .gitignore.
+            Please add {sys.prefix} to .gitignore.
             """, file=sys.stderr)
 
         if not is_pycache_ignored and "__pycache__" in list_of_subfolders:
