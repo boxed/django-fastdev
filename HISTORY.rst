@@ -1,6 +1,15 @@
 Changelog
 ---------
 
+1.9.0
+~~~~~
+
+* Fix for strict if on 500 pages in prod
+* Improve the reliability of venv gitignore checking
+* Modify errors to be printed to stderr instead of stdout
+* Check if virtualenv ENV is set
+
+
 1.8.0
 ~~~~~
 
