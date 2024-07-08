@@ -168,3 +168,7 @@ def test_debug_engine(settings):
     settings.FASTDEV_STRICT_IF = True
     t = DEBUG_ENGINE.from_string('{% if does_not_exist %}{% endif %}{{ also_does_not_exist')
     t.render(Context())
+
+
+def test_ignored_templates():
+    render(req('get'), template_name='ignored/test_resolve_simple.html')

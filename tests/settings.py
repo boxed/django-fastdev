@@ -37,3 +37,7 @@ DATABASES = {
 }
 
 ROOT_URLCONF = 'tests.urls'
+
+FASTDEV_IGNORED_TEMPLATES = [
+    r".*.templates/ignored.*"
+]
