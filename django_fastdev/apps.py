@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 import threading
+from functools import cache
 from typing import Optional
 import warnings
 from contextlib import (
@@ -180,6 +181,23 @@ def get_venv_folder_name():
     venv_folder = os.path.basename(path_to_venv)
     return venv_folder
 
+@cache
+def get_ignored_template_list():
+    ignored_templates_settings = getattr(settings, 'FASTDEV_IGNORED_TEMPLATES', [])
+    ignored_templates = list()
+    if ignored_templates_settings:
+        for entry in ignored_templates_settings:
+            ignored_templates.append(re.compile(entry))
+    return ignored_templates
+
+
+@cache
+def template_is_ignored(origin_name):
+    for expr in get_ignored_template_list():
+        if expr.match(origin_name):
+            return True
+    return False
+
 
 class FastDevConfig(AppConfig):
     name = 'django_fastdev'
@@ -192,6 +210,10 @@ class FastDevConfig(AppConfig):
         def resolve_override(self, context, ignore_failures=False, ignore_failures_for_real=False):
             if context.template_name is None and '{% if exception_type %}{{ exception_type }}' in context.template.source:
                 # best guess we are in the 500 error page, do the default
+                return orig_resolve(self, context)
+
+            # If a template has been explicitly ignored by the developer, do the default
+            if template_is_ignored(context.template.origin.name):
                 return orig_resolve(self, context)
 
             if isinstance(self.var, Variable):
