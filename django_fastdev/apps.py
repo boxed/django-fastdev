@@ -20,6 +20,7 @@ from django.forms import Form
 from django.template import Context
 from django.template.base import (
     FilterExpression,
+    TextNode,
     Variable,
     VariableDoesNotExist,
     TokenType,
@@ -27,6 +28,10 @@ from django.template.base import (
 from django.template.defaulttags import (
     FirstOfNode,
     IfNode,
+)
+from django.template.loader_tags import (
+    BlockNode,
+    ExtendsNode,
 )
 from django.templatetags.i18n import BlockTranslateNode
 from django.urls.exceptions import NoReverseMatch
@@ -383,6 +388,52 @@ The object was: {current!r}
             return orig_blocktrans_render_token_list(self, tokens)
 
         BlockTranslateNode.render_token_list = fastdev_render_token_list
+
+        # Extends validation
+        def collect_nested_blocks(node):
+            if isinstance(node, BlockNode):
+                result = {node.name}
+            else:
+                result = set()
+            for x in node.nodelist:
+                if isinstance(x, BlockNode):
+                    result |= collect_nested_blocks(x)
+            return result
+
+        def get_extends_node_parent(extends_node, context):
+            compiled_parent = extends_node.get_parent(context)
+            del context.render_context[extends_node.context_key]  # remove our history of doing this
+            return compiled_parent
+
+        def collect_valid_blocks(template, context):
+            result = set()
+            for x in template.nodelist:
+                if isinstance(x, BlockNode):
+                    result |= collect_nested_blocks(x)
+                elif isinstance(x, ExtendsNode):
+                    result |= collect_nested_blocks(x)
+                    result |= collect_valid_blocks(get_extends_node_parent(x, context), context)
+            return result
+
+        orig_extends_render = ExtendsNode.render
+
+        def extends_render(self, context):
+            if settings.DEBUG:
+                valid_blocks = collect_valid_blocks(get_extends_node_parent(self, context), context)
+                actual_blocks = {x.name for x in self.nodelist if isinstance(x, BlockNode)}
+                invalid_blocks = actual_blocks - valid_blocks
+                if invalid_blocks:
+                    invalid_names = '    ' + '\n    '.join(sorted(invalid_blocks))
+                    valid_names = '    ' + '\n    '.join(sorted(valid_blocks))
+                    raise Exception(f'Invalid blocks specified:\n\n{invalid_names}\n\nValid blocks:\n\n{valid_names}')
+
+                # TODO: validate no thrown away (non-whitespace) text blocks! And write a test for that!
+                thrown_away_text = '\n    '.join([repr(x.s.strip()) for x in self.nodelist if isinstance(x, TextNode) and x.s.strip()])
+                assert not thrown_away_text, f'The following html was thrown away when rendering {self.origin.template_name}:\n\n    {thrown_away_text}'
+
+            return orig_extends_render(self, context)
+
+        ExtendsNode.render = extends_render
 
 
 class InvalidCleanMethod(Exception):
