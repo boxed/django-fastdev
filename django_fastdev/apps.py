@@ -427,7 +427,7 @@ The object was: {current!r}
                     valid_names = '    ' + '\n    '.join(sorted(valid_blocks))
                     raise Exception(f'Invalid blocks specified:\n\n{invalid_names}\n\nValid blocks:\n\n{valid_names}')
 
-                # TODO: validate no thrown away (non-whitespace) text blocks! And write a test for that!
+                # Validate no thrown away (non-whitespace) text blocks
                 thrown_away_text = '\n    '.join([repr(x.s.strip()) for x in self.nodelist if isinstance(x, TextNode) and x.s.strip()])
                 assert not thrown_away_text, f'The following html was thrown away when rendering {self.origin.template_name}:\n\n    {thrown_away_text}'
 
