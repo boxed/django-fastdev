@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.10.0
+~~~~~~
+
+* Reintroduced invalid block check with fixes
+
+
 1.9.0
 ~~~~~
 
