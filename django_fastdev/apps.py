@@ -72,6 +72,39 @@ def get_gitignore_path():
         return os.path.join(path, ".gitignore")
     else:
         return None
+    
+
+def is_absolute_url(url):
+    return bool(url.startswith('/') or url.startswith('http://') or url.startswith('https://'))
+    
+
+def validate_static_url_setting():
+    """
+    Validates the STATIC_URL setting to ensure it is indeed absolute url.
+
+    This function checks whether the `STATIC_URL` setting, typically defined in the 
+    application's settings, is set correctly. It ensures that the URL starts with either a '/' 
+    or 'http'. If the`STATIC_URL` does not start with either, an exception is raised.
+
+    Raises:
+        Exception: If the `STATIC_URL` does not start with '/' or 'http'.
+
+    Returns:
+        None
+    """
+    static_url = getattr(settings, 'STATIC_URL', None)
+    
+    # check for static url
+    if static_url and not is_absolute_url(static_url):
+        print(f"""
+        WARNING:
+        You have STATIC_URL set to {static_url} in your settings.py file.
+
+        It should start with either a '/' or 'http' to ensure it is an absolute URL.
+
+        """, file=sys.stderr)
+
+    return
 
 
 def check_for_migrations_in_gitignore(line):
@@ -379,6 +412,8 @@ The object was: {current!r}
 
         # Fix blocktrans
         orig_blocktrans_render_token_list = BlockTranslateNode.render_token_list
+
+        validate_static_url_setting()
 
         def fastdev_render_token_list(self, tokens):
             for token in tokens:
