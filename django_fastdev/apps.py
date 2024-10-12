@@ -15,7 +15,10 @@ from pathlib import Path
 
 from django.apps import AppConfig
 from django.conf import settings
-from django.db.models import QuerySet
+from django.db.models import (
+    Model,
+    QuerySet,
+)
 from django.forms import Form
 from django.template import Context
 from django.template.base import (
@@ -127,6 +130,7 @@ def is_venv_ignored(project_path: Path) -> Optional[bool]:
         print("git is not installed. django-fastdev can't check if venv is ignored in .gitignore", file=sys.stderr)
         return None
 
+
 def check_for_pycache_in_gitignore(line):
     return bool(re.search(r"__pycache__\b", line))
 
@@ -218,6 +222,7 @@ def get_venv_folder_name():
     path_to_venv = os.environ["VIRTUAL_ENV"]
     venv_folder = os.path.basename(path_to_venv)
     return venv_folder
+
 
 @cache
 def get_ignored_template_list():
@@ -469,6 +474,11 @@ The object was: {current!r}
             return orig_extends_render(self, context)
 
         ExtendsNode.render = extends_render
+
+        def fastdev_model__repr__(self):
+            return "<%s pk=%s>" % (self.__class__.__name__, self.pk)
+
+        Model.__repr__ = fastdev_model__repr__
 
 
 class InvalidCleanMethod(Exception):
