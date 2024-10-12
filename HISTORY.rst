@@ -1,6 +1,14 @@
 Changelog
 ---------
 
+1.11.0
+~~~~~~
+
+* Fixed a bug with the invalid block checker
+
+* Adds a new monkey patch for `Model.__repr__` to fix infinite recursion in error messages for `DoesNotExist` and `MultipleObjectsReturned` (the first is a fastdev bug and the second is a Django bug)
+
+
 1.10.0
 ~~~~~~
 
