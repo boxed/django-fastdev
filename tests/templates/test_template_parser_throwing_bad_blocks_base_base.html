@@ -6,8 +6,15 @@ This is included
 
 
 {% block footer %}
-    {% if False %}
+    {% if True %}
         {% block footer-nested-in-if %}
         {% endblock %}
+    {% else %}
+        {% block footer-nested-in-else %}
+        {% endblock %}
     {% endif %}
+    {% for i in "foo" %}
+        {% block footer-nested-in-for %}
+        {% endblock %}
+    {% endfor %}
 {% endblock %}

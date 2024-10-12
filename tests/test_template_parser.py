@@ -18,6 +18,8 @@ Valid blocks:
     content
     content2
     footer
+    footer-nested-in-else
+    footer-nested-in-for
     footer-nested-in-if"""
 
 

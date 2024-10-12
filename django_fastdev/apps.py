@@ -75,18 +75,18 @@ def get_gitignore_path():
         return os.path.join(path, ".gitignore")
     else:
         return None
-    
+
 
 def is_absolute_url(url):
     return bool(url.startswith('/') or url.startswith('http://') or url.startswith('https://'))
-    
+
 
 def validate_static_url_setting():
     """
     Validates the STATIC_URL setting to ensure it is indeed absolute url.
 
-    This function checks whether the `STATIC_URL` setting, typically defined in the 
-    application's settings, is set correctly. It ensures that the URL starts with either a '/' 
+    This function checks whether the `STATIC_URL` setting, typically defined in the
+    application's settings, is set correctly. It ensures that the URL starts with either a '/'
     or 'http'. If the`STATIC_URL` does not start with either, an exception is raised.
 
     Raises:
@@ -96,7 +96,7 @@ def validate_static_url_setting():
         None
     """
     static_url = getattr(settings, 'STATIC_URL', None)
-    
+
     # check for static url
     if static_url and not is_absolute_url(static_url):
         print(f"""
@@ -435,8 +435,8 @@ The object was: {current!r}
                 result = {node.name}
             else:
                 result = set()
-            if hasattr(node, 'nodelist'):
-                for x in node.nodelist:
+            for child_nodelist_name in node.child_nodelists:
+                for x in getattr(node, child_nodelist_name):
                     result |= collect_nested_blocks(x)
             return result
 
