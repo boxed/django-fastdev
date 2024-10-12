@@ -17,7 +17,8 @@ Valid blocks:
     body
     content
     content2
-    footer"""
+    footer
+    footer-nested-in-if"""
 
 
 def test_template_parser_throwing_away_html(settings):

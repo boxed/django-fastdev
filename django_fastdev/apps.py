@@ -435,8 +435,8 @@ The object was: {current!r}
                 result = {node.name}
             else:
                 result = set()
-            for x in node.nodelist:
-                if isinstance(x, BlockNode):
+            if hasattr(node, 'nodelist'):
+                for x in node.nodelist:
                     result |= collect_nested_blocks(x)
             return result
 
