@@ -436,8 +436,9 @@ The object was: {current!r}
             else:
                 result = set()
             for child_nodelist_name in node.child_nodelists:
-                for x in getattr(node, child_nodelist_name):
-                    result |= collect_nested_blocks(x)
+                if hasattr(node, child_nodelist_name):
+                    for x in getattr(node, child_nodelist_name):
+                        result |= collect_nested_blocks(x)
             return result
 
         def get_extends_node_parent(extends_node, context):
