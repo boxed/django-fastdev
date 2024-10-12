@@ -31,6 +31,7 @@ from django.template.base import (
 from django.template.defaulttags import (
     FirstOfNode,
     IfNode,
+    ForNode
 )
 from django.template.loader_tags import (
     BlockNode,
@@ -449,7 +450,7 @@ The object was: {current!r}
         def collect_valid_blocks(template, context):
             result = set()
             for x in template.nodelist:
-                if isinstance(x, BlockNode):
+                if isinstance(x, (BlockNode, IfNode, ForNode)):
                     result |= collect_nested_blocks(x)
                 elif isinstance(x, ExtendsNode):
                     result |= collect_nested_blocks(x)
