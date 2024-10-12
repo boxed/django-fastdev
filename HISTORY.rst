@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.12.0
+~~~~~~
+
+* Fixed another bug with the invalid block checker. The Django admin should work now.
+
+
 1.11.0
 ~~~~~~
 
