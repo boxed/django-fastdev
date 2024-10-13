@@ -450,11 +450,14 @@ The object was: {current!r}
         def collect_valid_blocks(template, context):
             result = set()
             for x in template.nodelist:
-                if isinstance(x, (BlockNode, IfNode, ForNode)):
-                    result |= collect_nested_blocks(x)
-                elif isinstance(x, ExtendsNode):
+                if isinstance(x, ExtendsNode):
                     result |= collect_nested_blocks(x)
                     result |= collect_valid_blocks(get_extends_node_parent(x, context), context)
+                elif hasattr(x, 'child_nodelists'):
+                    # to be more explicit, could make the condition above
+                    # 'isinstance(x, (AutoEscapeControlNode, BlockNode, FilterNode, ForNode, IfNode,
+                    # IfChangedNode, SpacelessNode))' at the risk of missing some we don't know about
+                    result |= collect_nested_blocks(x)
             return result
 
         orig_extends_render = ExtendsNode.render
