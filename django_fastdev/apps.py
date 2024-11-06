@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 import threading
+import importlib
 from functools import cache
 from typing import Optional
 import warnings
@@ -458,6 +459,11 @@ The object was: {current!r}
                     # 'isinstance(x, (AutoEscapeControlNode, BlockNode, FilterNode, ForNode, IfNode,
                     # IfChangedNode, SpacelessNode))' at the risk of missing some we don't know about
                     result |= collect_nested_blocks(x)
+                else:
+                    if settings.FASTDEV_INVALID_BLOCKS_CALLBACK is not None:
+                        module, callback = settings.FASTDEV_INVALID_BLOCKS_CALLBACK.rsplit(".", 1)
+                        module = importlib.import_module(module)
+                        result = getattr(module, callback)(x, result)
             return result
 
         orig_extends_render = ExtendsNode.render
