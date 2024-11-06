@@ -108,6 +108,7 @@ FASTDEV_INVALID_BLOCKS_CALLBACK = "your_app.settings.fastdev_blocks"
 def fastdev_blocks(x, result):
     if hasattr(x, 'varname') and x.varname is not None:
         result.add(x.varname)
+        result.add(x.varname.replace('_', '-'))
     return result
 ```
 
