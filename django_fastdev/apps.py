@@ -460,7 +460,7 @@ The object was: {current!r}
                     # IfChangedNode, SpacelessNode))' at the risk of missing some we don't know about
                     result |= collect_nested_blocks(x)
                 else:
-                    if settings.FASTDEV_INVALID_BLOCKS_CALLBACK is not None:
+                    if getattr(settings, 'FASTDEV_INVALID_BLOCKS_CALLBACK', False) is False:
                         module, callback = settings.FASTDEV_INVALID_BLOCKS_CALLBACK.rsplit(".", 1)
                         module = importlib.import_module(module)
                         result = getattr(module, callback)(x, result)
