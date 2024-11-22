@@ -451,6 +451,10 @@ The object was: {current!r}
         def collect_valid_blocks(template, context):
             result = set()
             for x in template.nodelist:
+                if getattr(settings, 'FASTDEV_INVALID_BLOCKS_CALLBACK', False) is not False:
+                    module, callback = settings.FASTDEV_INVALID_BLOCKS_CALLBACK.rsplit(".", 1)
+                    module = importlib.import_module(module)
+                    result = getattr(module, callback)(x, result)
                 if isinstance(x, ExtendsNode):
                     result |= collect_nested_blocks(x)
                     result |= collect_valid_blocks(get_extends_node_parent(x, context), context)
@@ -459,11 +463,6 @@ The object was: {current!r}
                     # 'isinstance(x, (AutoEscapeControlNode, BlockNode, FilterNode, ForNode, IfNode,
                     # IfChangedNode, SpacelessNode))' at the risk of missing some we don't know about
                     result |= collect_nested_blocks(x)
-                else:
-                    if getattr(settings, 'FASTDEV_INVALID_BLOCKS_CALLBACK', False) is False:
-                        module, callback = settings.FASTDEV_INVALID_BLOCKS_CALLBACK.rsplit(".", 1)
-                        module = importlib.import_module(module)
-                        result = getattr(module, callback)(x, result)
             return result
 
         orig_extends_render = ExtendsNode.render
