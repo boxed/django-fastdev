@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.13.0
+~~~~~~
+
+* Improved `TemplateDoesNotExist` errors
+
+
 1.12.0
 ~~~~~~
 
