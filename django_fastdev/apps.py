@@ -1,3 +1,4 @@
+import difflib
 import inspect
 import os
 import re
@@ -40,6 +41,9 @@ from django.template.loader_tags import (
 from django.templatetags.i18n import BlockTranslateNode
 from django.urls.exceptions import NoReverseMatch
 from django.views.debug import DEBUG_ENGINE
+from django.template import engines
+from django.template.loaders.app_directories import Loader as AppDirLoader
+from django.template.loaders.filesystem import Loader as FilesystemLoader
 
 
 class FastDevVariableDoesNotExist(Exception):
@@ -484,6 +488,112 @@ The object was: {current!r}
             return "<%s pk=%s>" % (self.__class__.__name__, self.pk)
 
         Model.__repr__ = fastdev_model__repr__
+
+        TemplateDoesNotExist.__str__ = fastdev_template_does_not_exist_error
+
+
+def get_template_files(directory):
+    templates = []
+
+    if not os.path.exists(directory):
+        return templates
+
+    for root, _, files in os.walk(directory):
+        for file in files:
+            template_extensions = getattr(
+                settings, "SHOWTEMPLATE_EXTENSIONS", [".html", ".htm", ".django", ".jinja", ".md"]
+            )
+            if file.endswith(tuple(template_extensions)):
+                full_path = os.path.join(root, file)
+                rel_path = os.path.relpath(full_path, directory)
+                templates.append(rel_path)
+
+    return templates
+
+
+def get_loader_templates(loader):
+    templates = set()
+    # Handle cached loader
+    if hasattr(loader, "loaders"):
+        for inner_loader in loader.loaders:
+            templates.update(get_loader_templates(inner_loader))
+        return templates
+
+    # Get directories from filesystem loader
+    if isinstance(loader, FilesystemLoader):
+        dirs = loader.get_dirs()
+        for template_dir in dirs:
+            templates.update(get_template_files(template_dir))
+
+    # Get directories from app directories loader
+    if isinstance(loader, AppDirLoader):
+        app_template_dirs = loader.get_dirs()
+        for template_dir in app_template_dirs:
+            templates.update(get_template_files(template_dir))
+
+    return templates
+
+
+def get_all_templates():
+    all_templates = set()
+
+    # Process each template configuration
+    for template_config in settings.TEMPLATES:
+        # Find the engine that matches the BACKEND
+        backend = None
+        for engine in engines.all():
+            if engine.__class__.__name__ == template_config["BACKEND"].split(".")[-1]:
+                backend = engine
+                break
+
+        if backend is None:
+            continue
+
+        engine = backend.engine
+
+        # Process loaders
+        options_dict = template_config.get("OPTIONS", {})
+        loader_list = options_dict.get("loaders", [])
+
+        if loader_list:
+            loaders = engine.get_template_loaders(loader_list)
+        else:
+            loaders = engine.template_loaders
+
+        # Process loaders
+        for loader in loaders:
+            templates = get_loader_templates(loader)
+            all_templates.update(templates)
+
+    # Sort results
+    template_list = sorted(all_templates)
+
+    if not template_list:
+        return
+
+    return template_list
+
+
+from django.template import TemplateDoesNotExist
+
+
+def fastdev_template_does_not_exist_error(self):
+    if not settings.DEBUG:
+        return ''.join(self.args)
+
+    r = list(self.args)
+
+    templates = get_all_templates()
+
+    suggestions = difflib.get_close_matches(self.args[0], templates)
+    if suggestions:
+        r += ['', 'Did you mean?']
+        r += [f'    {x}' for x in suggestions]
+
+    r += ['', 'Valid values:']
+    r += [f'    {x}' for x in templates]
+
+    return '\n'.join(r)
 
 
 class InvalidCleanMethod(Exception):
