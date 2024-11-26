@@ -607,22 +607,15 @@ def get_template_files(directory):
 
 def get_loader_templates(loader):
     templates = set()
-    # Handle cached loader
+
     if hasattr(loader, "loaders"):
         for inner_loader in loader.loaders:
             templates.update(get_loader_templates(inner_loader))
         return templates
 
-    # Get directories from filesystem loader
-    if isinstance(loader, FilesystemLoader):
+    if isinstance(loader, (FilesystemLoader, AppDirLoader)):
         dirs = loader.get_dirs()
         for template_dir in dirs:
-            templates.update(get_template_files(template_dir))
-
-    # Get directories from app directories loader
-    if isinstance(loader, AppDirLoader):
-        app_template_dirs = loader.get_dirs()
-        for template_dir in app_template_dirs:
             templates.update(get_template_files(template_dir))
 
     return templates
