@@ -5,45 +5,33 @@ import re
 import subprocess
 import sys
 import threading
-from functools import cache
-from typing import Optional
 import warnings
-from contextlib import (
-    contextmanager,
-    nullcontext,
-)
+from contextlib import contextmanager, nullcontext
+from functools import cache
+from inspect import getmodule
 from pathlib import Path
+from typing import Optional
 
 from django.apps import AppConfig
 from django.conf import settings
-from django.db.models import (
-    Model,
-    QuerySet,
-)
+from django.db.models import Model, QuerySet
 from django.forms import Form
-from django.template import Context
+from django.template import Context, engines
 from django.template.base import (
     FilterExpression,
     TextNode,
+    TokenType,
     Variable,
     VariableDoesNotExist,
-    TokenType,
 )
-from django.template.defaulttags import (
-    FirstOfNode,
-    IfNode,
-    ForNode
-)
-from django.template.loader_tags import (
-    BlockNode,
-    ExtendsNode,
-)
+from django.template.defaulttags import ForNode  # noqa: F401
+from django.template.defaulttags import FirstOfNode, IfNode
+from django.template.loader_tags import BlockNode, ExtendsNode
+from django.template.loaders.app_directories import Loader as AppDirLoader
+from django.template.loaders.filesystem import Loader as FilesystemLoader
 from django.templatetags.i18n import BlockTranslateNode
 from django.urls.exceptions import NoReverseMatch
 from django.views.debug import DEBUG_ENGINE
-from django.template import engines
-from django.template.loaders.app_directories import Loader as AppDirLoader
-from django.template.loaders.filesystem import Loader as FilesystemLoader
 
 
 class FastDevVariableDoesNotExist(Exception):
@@ -83,7 +71,9 @@ def get_gitignore_path():
 
 
 def is_absolute_url(url):
-    return bool(url.startswith('/') or url.startswith('http://') or url.startswith('https://'))
+    return bool(
+        url.startswith("/") or url.startswith("http://") or url.startswith("https://")
+    )
 
 
 def validate_static_url_setting():
@@ -100,17 +90,20 @@ def validate_static_url_setting():
     Returns:
         None
     """
-    static_url = getattr(settings, 'STATIC_URL', None)
+    static_url = getattr(settings, "STATIC_URL", None)
 
     # check for static url
     if static_url and not is_absolute_url(static_url):
-        print(f"""
+        print(
+            f"""
         WARNING:
         You have STATIC_URL set to {static_url} in your settings.py file.
 
         It should start with either a '/' or 'http' to ensure it is an absolute URL.
 
-        """, file=sys.stderr)
+        """,
+            file=sys.stderr,
+        )
 
     return
 
@@ -129,10 +122,15 @@ def is_venv_ignored(project_path: Path) -> Optional[bool]:
     try:
         # ensure git is invoked as though it were run from the project directory, since
         # manage.py can be invoked from other directories.
-        check_ignore = subprocess.run(["git", "-C", project_path, "check-ignore", "--quiet", sys.prefix])
+        check_ignore = subprocess.run(
+            ["git", "-C", project_path, "check-ignore", "--quiet", sys.prefix]
+        )
         return check_ignore.returncode == 0
     except FileNotFoundError:
-        print("git is not installed. django-fastdev can't check if venv is ignored in .gitignore", file=sys.stderr)
+        print(
+            "git is not installed. django-fastdev can't check if venv is ignored in .gitignore",
+            file=sys.stderr,
+        )
         return None
 
 
@@ -147,35 +145,43 @@ def validate_gitignore(path):
     is_pycache_ignored = False
 
     with open(path, "r") as git_ignore_file:
-        for (index, line) in enumerate(git_ignore_file.readlines()):
-
+        for index, line in enumerate(git_ignore_file.readlines()):
             if check_for_migrations_in_gitignore(line):
-                bad_line_numbers_for_ignoring_migration.append(index+1)
+                bad_line_numbers_for_ignoring_migration.append(index + 1)
 
             if check_for_pycache_in_gitignore(line):
                 is_pycache_ignored = True
 
         if bad_line_numbers_for_ignoring_migration:
-            print(f"""
+            print(
+                f"""
             You have excluded migrations folders from git
 
             This is not a good idea! It's very important to commit all your migrations files into git for migrations to work properly.
 
             https://docs.djangoproject.com/en/dev/topics/migrations/#version-control for more information
 
-            Bad pattern on lines : {', '.join(map(str, bad_line_numbers_for_ignoring_migration))}""", file=sys.stderr)
+            Bad pattern on lines : {', '.join(map(str, bad_line_numbers_for_ignoring_migration))}""",
+                file=sys.stderr,
+            )
 
         if is_venv_ignored(project_path) is False:
-            print(f"""
+            print(
+                f"""
             {sys.prefix} is not ignored in .gitignore.
             Please add {sys.prefix} to .gitignore.
-            """, file=sys.stderr)
+            """,
+                file=sys.stderr,
+            )
 
         if not is_pycache_ignored and "__pycache__" in list_of_subfolders:
-            print(f"""
+            print(
+                """
             __pycache__ is not ignored in .gitignore.
             Please add __pycache__ to .gitignore.
-            """, file=sys.stderr)
+            """,
+                file=sys.stderr,
+            )
 
 
 def validate_fk_field(model):
@@ -209,16 +215,41 @@ def get_models_with_badly_named_pk():
             car = ForeignKey(Car)
 
         Django will create a `car_id` field under the hood that is the ID of that field (normally a number).""",
-            file=sys.stderr
+            file=sys.stderr,
         )
 
 
 def strict_if():
-    return getattr(settings, 'FASTDEV_STRICT_IF', False)
+    return getattr(settings, "FASTDEV_STRICT_IF", False)
 
 
 def strict_template_checking():
-    return getattr(settings, 'FASTDEV_STRICT_TEMPLATE_CHECKING', False)
+    return getattr(settings, "FASTDEV_STRICT_TEMPLATE_CHECKING", False)
+
+
+def strict_form_checking():
+    return getattr(settings, "FASTDEV_STRICT_FORM_CHECKING", False)
+
+
+def is_from_project(cls):
+    """
+    Check if a class originates from the project directory.
+
+    Args:
+        cls: The class to check.
+        project_root: The root directory of your project (absolute path).
+
+    Returns:
+        bool: True if the class originates from the project directory, False otherwise.
+    """
+    module = getmodule(cls)
+
+    # check if built-in module or dynamically created class
+    if not module or not hasattr(module, "__file__"):
+        return False
+
+    module_path = os.path.abspath(module.__file__)
+    return module_path.startswith(os.path.abspath(settings.BASE_DIR))
 
 
 def get_venv_folder_name():
@@ -231,7 +262,7 @@ def get_venv_folder_name():
 
 @cache
 def get_ignored_template_list():
-    ignored_templates_settings = getattr(settings, 'FASTDEV_IGNORED_TEMPLATES', [])
+    ignored_templates_settings = getattr(settings, "FASTDEV_IGNORED_TEMPLATES", [])
     ignored_templates = list()
     if ignored_templates_settings:
         for entry in ignored_templates_settings:
@@ -248,15 +279,21 @@ def template_is_ignored(origin_name):
 
 
 class FastDevConfig(AppConfig):
-    name = 'django_fastdev'
-    verbose_name = 'django-fastdev'
+    name = "django_fastdev"
+    verbose_name = "django-fastdev"
     default = True
 
     def ready(self):
         orig_resolve = FilterExpression.resolve
 
-        def resolve_override(self, context, ignore_failures=False, ignore_failures_for_real=False):
-            if context.template_name is None and '{% if exception_type %}{{ exception_type }}' in context.template.source:
+        def resolve_override(
+            self, context, ignore_failures=False, ignore_failures_for_real=False
+        ):
+            if (
+                context.template_name is None
+                and "{% if exception_type %}{{ exception_type }}"
+                in context.template.source
+            ):
                 # best guess we are in the 500 error page, do the default
                 return orig_resolve(self, context)
 
@@ -273,49 +310,61 @@ class FastDevConfig(AppConfig):
                     if not strict_template_checking():
                         # worry only about templates inside our project dir; if they
                         # exist elsewhere, then go to standard django behavior
-                        venv_dir = os.environ.get('VIRTUAL_ENV', '')
+                        venv_dir = os.environ.get("VIRTUAL_ENV", "")
                         origin = context.template.origin.name
                         if (
-                            origin != '<unknown source>' and
-                            'django-fastdev/tests/' not in origin
+                            origin != "<unknown source>"
+                            and "django-fastdev/tests/" not in origin
                             and (
                                 not origin.startswith(str(settings.BASE_DIR))
                                 or (venv_dir and origin.startswith(venv_dir))
                             )
                         ):
-                            return orig_resolve(self, context, ignore_failures=ignore_failures)
-                    if ignore_failures_for_real or getattr(_local, 'ignore_errors', False):
+                            return orig_resolve(
+                                self, context, ignore_failures=ignore_failures
+                            )
+                    if ignore_failures_for_real or getattr(
+                        _local, "ignore_errors", False
+                    ):
                         if _local.deprecation_warning:
-                            warnings.warn(_local.deprecation_warning, category=DeprecationWarning)
+                            warnings.warn(
+                                _local.deprecation_warning, category=DeprecationWarning
+                            )
                         return orig_resolve(self, context, ignore_failures=True)
 
                     if context.template.engine == DEBUG_ENGINE:
-                        return orig_resolve(self, context, ignore_failures=ignore_failures)
+                        return orig_resolve(
+                            self, context, ignore_failures=ignore_failures
+                        )
 
                     bit, current = e.params
                     if len(self.var.lookups) == 1:
-                        available = '\n    '.join(sorted(context.flatten().keys()))
-                        raise FastDevVariableDoesNotExist(f'''{self.var} does not exist in context. Available top level variables:
+                        available = "\n    ".join(sorted(context.flatten().keys()))
+                        raise FastDevVariableDoesNotExist(f"""{self.var} does not exist in context. Available top level variables:
 
     {available}
-''')
+""")
                     else:
-                        full_name = '.'.join(self.var.lookups)
-                        extra = ''
+                        full_name = ".".join(self.var.lookups)
+                        extra = ""
 
                         if isinstance(current, Context):
                             current = current.flatten()
 
                         if isinstance(current, dict):
-                            available_keys = '\n    '.join(sorted(current.keys()))
-                            extra = f'\nYou can access keys in the dict by their name. Available keys:\n\n    {available_keys}\n'
+                            available_keys = "\n    ".join(sorted(current.keys()))
+                            extra = f"\nYou can access keys in the dict by their name. Available keys:\n\n    {available_keys}\n"
                             error = f"dict does not have a key '{bit}', and does not have a member {bit}"
                         else:
-                            name = f'{type(current).__module__}.{type(current).__name__}'
-                            error = f'{name} does not have a member {bit}'
-                        available = '\n    '.join(sorted(x for x in dir(current) if not x.startswith('_')))
+                            name = (
+                                f"{type(current).__module__}.{type(current).__name__}"
+                            )
+                            error = f"{name} does not have a member {bit}"
+                        available = "\n    ".join(
+                            sorted(x for x in dir(current) if not x.startswith("_"))
+                        )
 
-                        raise FastDevVariableDoesNotExist(f'''Tried looking up {full_name} in context
+                        raise FastDevVariableDoesNotExist(f"""Tried looking up {full_name} in context
 
 {error}
 {extra}
@@ -324,7 +373,7 @@ Available attributes:
     {available}
 
 The object was: {current!r}
-''')
+""")
 
             return orig_resolve(self, context, ignore_failures)
 
@@ -344,8 +393,14 @@ The object was: {current!r}
             for condition, nodelist in self.conditions_nodelists:
                 if condition is not None:  # if / elif clause
                     context_handler = nullcontext()
-                    if not strict_if() or '{% if exception_type %}{{ exception_type }}' in context.template.source:
-                        context_handler = ignore_template_errors(deprecation_warning='set FASTDEV_STRICT_IF in settings, and use {% ifexists %} instead of {% if %} to check if a variable exists.')
+                    if (
+                        not strict_if()
+                        or "{% if exception_type %}{{ exception_type }}"
+                        in context.template.source
+                    ):
+                        context_handler = ignore_template_errors(
+                            deprecation_warning="set FASTDEV_STRICT_IF in settings, and use {% ifexists %} instead of {% if %} to check if a variable exists."
+                        )
 
                     with context_handler:
                         try:
@@ -358,14 +413,16 @@ The object was: {current!r}
                 if match:
                     return nodelist.render(context)
 
-            return ''
+            return ""
 
         IfNode.render = if_render_override
 
         # Better reverse() errors
         import django.urls.resolvers as res
+
         res.NoReverseMatch = FastDevNoReverseMatch
         import django.urls.base as bas
+
         bas.NoReverseMatch = FastDevNoReverseMatchNamespace
 
         # Forms validation
@@ -373,14 +430,21 @@ The object was: {current!r}
 
         def fastdev_full_clean(self):
             orig_form_full_clean(self)
-            from django.conf import settings
-            if settings.DEBUG:
-                prefix = 'clean_'
-                for name in dir(self):
-                    if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
-                        fields = '\n    '.join(sorted(self.fields.keys()))
+            # check if class is from our project, or strict form checking is enabled
+            if is_from_project(type(self)) or strict_form_checking():
+                from django.conf import settings
 
-                        raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
+                if settings.DEBUG:
+                    prefix = "clean_"
+                    for name in dir(self):
+                        if (
+                            name.startswith(prefix)
+                            and callable(getattr(self, name))
+                            and name[len(prefix) :] not in self.fields
+                        ):
+                            fields = "\n    ".join(sorted(self.fields.keys()))
+
+                            raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
 
     {fields}""")
 
@@ -393,10 +457,10 @@ The object was: {current!r}
             assert len(e.args) == 1
             message = e.args[0]
             if args:
-                message += f'\n\nQuery args:\n\n    {args}'
+                message += f"\n\nQuery args:\n\n    {args}"
             if kwargs:
-                kwargs = '\n    '.join([f'{k}: {v!r}' for k, v in kwargs.items()])
-                message += f'\n\nQuery kwargs:\n\n    {kwargs}'
+                kwargs = "\n    ".join([f"{k}: {v!r}" for k, v in kwargs.items()])
+                message += f"\n\nQuery kwargs:\n\n    {kwargs}"
             e.args = (message,)
 
         def fast_dev_get(self, *args, **kwargs):
@@ -415,7 +479,7 @@ The object was: {current!r}
             # Gitignore validation
             git_ignore = get_gitignore_path()
             if git_ignore:
-                threading.Thread(target=validate_gitignore, args=(git_ignore, )).start()
+                threading.Thread(target=validate_gitignore, args=(git_ignore,)).start()
 
             # ForeignKey validation
             threading.Thread(target=get_models_with_badly_named_pk).start()
@@ -428,8 +492,10 @@ The object was: {current!r}
         def fastdev_render_token_list(self, tokens):
             for token in tokens:
                 if token.token_type == TokenType.VAR:
-                    if '.' in token.contents:
-                        raise FastDevVariableDoesNotExist("You can't use dotted paths in blocktrans. You must use {% with foo = something.bar %} around the blocktrans.")
+                    if "." in token.contents:
+                        raise FastDevVariableDoesNotExist(
+                            "You can't use dotted paths in blocktrans. You must use {% with foo = something.bar %} around the blocktrans."
+                        )
             return orig_blocktrans_render_token_list(self, tokens)
 
         BlockTranslateNode.render_token_list = fastdev_render_token_list
@@ -448,7 +514,9 @@ The object was: {current!r}
 
         def get_extends_node_parent(extends_node, context):
             compiled_parent = extends_node.get_parent(context)
-            del context.render_context[extends_node.context_key]  # remove our history of doing this
+            del context.render_context[
+                extends_node.context_key
+            ]  # remove our history of doing this
             return compiled_parent
 
         def collect_valid_blocks(template, context):
@@ -456,8 +524,10 @@ The object was: {current!r}
             for x in template.nodelist:
                 if isinstance(x, ExtendsNode):
                     result |= collect_nested_blocks(x)
-                    result |= collect_valid_blocks(get_extends_node_parent(x, context), context)
-                elif hasattr(x, 'child_nodelists'):
+                    result |= collect_valid_blocks(
+                        get_extends_node_parent(x, context), context
+                    )
+                elif hasattr(x, "child_nodelists"):
                     # to be more explicit, could make the condition above
                     # 'isinstance(x, (AutoEscapeControlNode, BlockNode, FilterNode, ForNode, IfNode,
                     # IfChangedNode, SpacelessNode))' at the risk of missing some we don't know about
@@ -468,17 +538,29 @@ The object was: {current!r}
 
         def extends_render(self, context):
             if settings.DEBUG:
-                valid_blocks = collect_valid_blocks(get_extends_node_parent(self, context), context)
-                actual_blocks = {x.name for x in self.nodelist if isinstance(x, BlockNode)}
+                valid_blocks = collect_valid_blocks(
+                    get_extends_node_parent(self, context), context
+                )
+                actual_blocks = {
+                    x.name for x in self.nodelist if isinstance(x, BlockNode)
+                }
                 invalid_blocks = actual_blocks - valid_blocks
                 if invalid_blocks:
-                    invalid_names = '    ' + '\n    '.join(sorted(invalid_blocks))
-                    valid_names = '    ' + '\n    '.join(sorted(valid_blocks))
-                    raise Exception(f'Invalid blocks specified:\n\n{invalid_names}\n\nValid blocks:\n\n{valid_names}')
+                    invalid_names = "    " + "\n    ".join(sorted(invalid_blocks))
+                    valid_names = "    " + "\n    ".join(sorted(valid_blocks))
+                    raise Exception(
+                        f"Invalid blocks specified:\n\n{invalid_names}\n\nValid blocks:\n\n{valid_names}"
+                    )
 
                 # Validate no thrown away (non-whitespace) text blocks
-                thrown_away_text = '\n    '.join([repr(x.s.strip()) for x in self.nodelist if isinstance(x, TextNode) and x.s.strip()])
-                assert not thrown_away_text, f'The following html was thrown away when rendering {self.origin.template_name}:\n\n    {thrown_away_text}'
+                thrown_away_text = "\n    ".join(
+                    [
+                        repr(x.s.strip())
+                        for x in self.nodelist
+                        if isinstance(x, TextNode) and x.s.strip()
+                    ]
+                )
+                assert not thrown_away_text, f"The following html was thrown away when rendering {self.origin.template_name}:\n\n    {thrown_away_text}"
 
             return orig_extends_render(self, context)
 
@@ -501,7 +583,9 @@ def get_template_files(directory):
     for root, _, files in os.walk(directory):
         for file in files:
             template_extensions = getattr(
-                settings, "SHOWTEMPLATE_EXTENSIONS", [".html", ".htm", ".django", ".jinja", ".md"]
+                settings,
+                "SHOWTEMPLATE_EXTENSIONS",
+                [".html", ".htm", ".django", ".jinja", ".md"],
             )
             if file.endswith(tuple(template_extensions)):
                 full_path = os.path.join(root, file)
@@ -574,12 +658,12 @@ def get_all_templates():
     return template_list
 
 
-from django.template import TemplateDoesNotExist
+from django.template import TemplateDoesNotExist  # noqa: E402
 
 
 def fastdev_template_does_not_exist_error(self):
     if not settings.DEBUG:
-        return ''.join(self.args)
+        return "".join(self.args)
 
     r = list(self.args)
 
@@ -587,13 +671,13 @@ def fastdev_template_does_not_exist_error(self):
 
     suggestions = difflib.get_close_matches(self.args[0], templates)
     if suggestions:
-        r += ['', 'Did you mean?']
-        r += [f'    {x}' for x in suggestions]
+        r += ["", "Did you mean?"]
+        r += [f"    {x}" for x in suggestions]
 
-    r += ['', 'Valid values:']
-    r += [f'    {x}' for x in templates]
+    r += ["", "Valid values:"]
+    r += [f"    {x}" for x in templates]
 
-    return '\n'.join(r)
+    return "\n".join(r)
 
 
 class InvalidCleanMethod(Exception):
@@ -601,36 +685,36 @@ class InvalidCleanMethod(Exception):
 
 
 class FastDevNoReverseMatchNamespace(NoReverseMatch):
-
     def __init__(self, msg):
         from django.conf import settings
+
         if settings.DEBUG:
             frame = inspect.currentframe().f_back
-            resolver = frame.f_locals['resolver']
+            resolver = frame.f_locals["resolver"]
 
-            msg += '\n\nAvailable namespaces:\n    '
-            msg += '\n    '.join(sorted(resolver.namespace_dict.keys()))
+            msg += "\n\nAvailable namespaces:\n    "
+            msg += "\n    ".join(sorted(resolver.namespace_dict.keys()))
 
         super().__init__(msg)
 
 
 class FastDevNoReverseMatch(NoReverseMatch):
-
     def __init__(self, msg):
         from django.conf import settings
+
         if settings.DEBUG:
             frame = inspect.currentframe().f_back
 
-            msg += '\n\nThese names exist:\n\n    '
+            msg += "\n\nThese names exist:\n\n    "
 
             names = []
 
-            resolver = frame.f_locals['self']
+            resolver = frame.f_locals["self"]
             for k in resolver.reverse_dict.keys():
                 if callable(k):
                     continue
                 names.append(k)
 
-            msg += '\n    '.join(sorted(names))
+            msg += "\n    ".join(sorted(names))
 
         super().__init__(msg)
