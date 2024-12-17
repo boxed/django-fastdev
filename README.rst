@@ -128,6 +128,11 @@ an error message telling you that your clean method doesn't match anything.
 This is also very useful during refactoring. Renaming a field is a lot safer
 as if you forget to rename the clean method :code:`django-fastdev` will tell you!
 
+By default, :code:`django-fastdev` will check only forms that exist within your project, 
+and not third-party libraries. If you would like to enable stricter validation that will 
+extend to ALL forms, you can set this by configuring :code:`FASTDEV_STRICT_FORM_CHECKING` 
+to :code:`True` in your Django settings.
+
 
 Faster startup
 ~~~~~~~~~~~~~~
