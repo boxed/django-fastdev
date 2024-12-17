@@ -248,8 +248,11 @@ def is_from_project(cls):
     if not module or not hasattr(module, "__file__"):
         return False
 
+    venv_dir = os.environ.get("VIRTUAL_ENV", "")
     module_path = os.path.abspath(module.__file__)
-    return module_path.startswith(os.path.abspath(settings.BASE_DIR))
+    return module_path.startswith(str(settings.BASE_DIR)) or module_path.startswith(
+        venv_dir
+    )
 
 
 def get_venv_folder_name():
