@@ -9,6 +9,7 @@ from django_fastdev.apps import InvalidCleanMethod
 
 def test_ok_form_works(settings):
     settings.DEBUG = True
+    settings.FASTDEV_STRICT_FORM_CHECKING = True
 
     class MyForm(Form):
         field = CharField()
@@ -30,6 +31,7 @@ def test_field_clean_validation(settings):
     MyForm().errors
 
     settings.DEBUG = True
+    settings.FASTDEV_STRICT_FORM_CHECKING = True  # set strict mode otherwise test will fail (because dynamically type form; doesn't exist in module)
     with pytest.raises(InvalidCleanMethod) as e:
         MyForm().errors
 
@@ -55,6 +57,7 @@ def test_field_clean_validation2(settings):
     MyForm().errors
 
     settings.DEBUG = True
+    settings.FASTDEV_STRICT_FORM_CHECKING = True  # set strict mode otherwise test will fail (because dynamically type form; doesn't exist in module)
     with pytest.raises(InvalidCleanMethod) as e:
         MyForm().errors
 
