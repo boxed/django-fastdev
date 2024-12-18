@@ -9,6 +9,7 @@ from django_fastdev.apps import InvalidCleanMethod
 
 def test_ok_form_works(settings):
     settings.DEBUG = True
+    settings.FASTDEV_STRICT_FORM_CHECKING = True
 
     class MyForm(Form):
         field = CharField()
