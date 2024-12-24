@@ -250,12 +250,10 @@ def is_from_project(cls):
     ) and not module_path.startswith(venv_dir)
 
 
-def fastdev_ignore():
+def fastdev_ignore(target):
     """A decorator to exclude a function or class from fastdev checks."""
-    def decorator(target):
-        setattr(target, "fastdev_ignore", True)
-        return target
-    return decorator
+    setattr(target, "fastdev_ignore", True)
+    return target
 
 
 def get_venv_folder_name():
@@ -411,7 +409,7 @@ The object was: {current!r}
         def fastdev_full_clean(self):
             orig_form_full_clean(self)
             # check if class is from our project, or strict form checking is enabled
-            if is_from_project(type(self)) or strict_form_checking():
+            if is_from_project(type(self)) or strict_form_checking() and not getattr(self, 'fastdev_ignore', False):
                 from django.conf import settings
                 if settings.DEBUG:
                     prefix = 'clean_'

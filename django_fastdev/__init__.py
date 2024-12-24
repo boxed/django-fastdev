@@ -8,6 +8,8 @@ default_app_config = 'django_fastdev.apps.FastDevConfig'
 
 from django.core.management.commands.runserver import Command
 
+from .apps import fastdev_ignore  # noqa
+
 orig_check = Command.check
 orig_check_migrations = Command.check_migrations
 
