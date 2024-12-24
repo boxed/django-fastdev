@@ -6,6 +6,7 @@ import subprocess
 import sys
 import threading
 from functools import cache
+from inspect import getmodule
 from typing import Optional
 import warnings
 from contextlib import (
@@ -221,6 +222,42 @@ def strict_template_checking():
     return getattr(settings, 'FASTDEV_STRICT_TEMPLATE_CHECKING', False)
 
 
+def strict_form_checking():
+    return getattr(settings, "FASTDEV_STRICT_FORM_CHECKING", False)
+
+
+def is_from_project(cls):
+    """
+    Check if a class originates from the project directory.
+
+    Args:
+        cls: The class to check.
+        project_root: The root directory of your project (absolute path).
+
+    Returns:
+        bool: True if the class originates from the project directory, False otherwise.
+    """
+    module = getmodule(cls)
+
+    # check if built-in module or dynamically created class
+    if not module or not hasattr(module, "__file__"):
+        return False
+
+    venv_dir = os.environ.get("VIRTUAL_ENV", "")
+    module_path = os.path.abspath(module.__file__)
+    return module_path.startswith(
+        str(settings.BASE_DIR)
+    ) and not module_path.startswith(venv_dir)
+
+
+def fastdev_ignore():
+    """A decorator to exclude a function or class from fastdev checks."""
+    def decorator(target):
+        setattr(target, "fastdev_ignore", True)
+        return target
+    return decorator
+
+
 def get_venv_folder_name():
     import os
 
@@ -373,14 +410,16 @@ The object was: {current!r}
 
         def fastdev_full_clean(self):
             orig_form_full_clean(self)
-            from django.conf import settings
-            if settings.DEBUG:
-                prefix = 'clean_'
-                for name in dir(self):
-                    if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
-                        fields = '\n    '.join(sorted(self.fields.keys()))
+            # check if class is from our project, or strict form checking is enabled
+            if is_from_project(type(self)) or strict_form_checking():
+                from django.conf import settings
+                if settings.DEBUG:
+                    prefix = 'clean_'
+                    for name in dir(self):
+                        if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
+                            fields = '\n    '.join(sorted(self.fields.keys()))
 
-                        raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
+                            raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
 
     {fields}""")
 
@@ -574,7 +613,7 @@ def get_all_templates():
     return template_list
 
 
-from django.template import TemplateDoesNotExist
+from django.template import TemplateDoesNotExist  # noqa: E402
 
 
 def fastdev_template_does_not_exist_error(self):
