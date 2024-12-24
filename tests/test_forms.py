@@ -35,7 +35,7 @@ def test_field_clean_validation(settings):
     with pytest.raises(InvalidCleanMethod) as e:
         MyForm().errors
 
-    assert str(e.value) == """Clean method clean_field of class MyForm won't apply to any field. Available fields:\n\n    field"""
+    assert str(e.value) == """Clean method clean_flield of class MyForm won't apply to any field. Available fields:\n\n    field"""
 
 
 # noinspection PyStatementEffect
@@ -62,4 +62,4 @@ def test_field_clean_validation2(settings):
     with pytest.raises(InvalidCleanMethod) as e:
         MyForm().errors
 
-    assert str(e.value) == """Clean method clean_field of class MyForm won't apply to any field. Available fields:\n\n    field"""
+    assert str(e.value) == """Clean method clean_flield of class MyForm won't apply to any field. Available fields:\n\n    field"""
