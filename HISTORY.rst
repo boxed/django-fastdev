@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+1.14.0
+~~~~~~
+
+* Validation for Form clean() methods is now limited only to Forms existing within the project, and does not extend to third-party libraries
+
+
 1.13.0
 ~~~~~~
 

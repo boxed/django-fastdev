@@ -1,4 +1,4 @@
-__version__ = '1.13.0'
+__version__ = '1.14.0'
 
 from threading import Thread
 from time import sleep
@@ -7,6 +7,8 @@ default_app_config = 'django_fastdev.apps.FastDevConfig'
 
 
 from django.core.management.commands.runserver import Command
+
+from .apps import fastdev_ignore  # noqa
 
 orig_check = Command.check
 orig_check_migrations = Command.check_migrations
