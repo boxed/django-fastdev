@@ -83,6 +83,15 @@ def get_gitignore_path():
         return None
 
 
+def get_venv_path():
+    return os.environ.get("VIRTUAL_ENV", None)
+
+
+def get_venv_folder_name():
+    venv_path = get_venv_path()
+    return os.path.basename(venv_path) if venv_path else venv_path
+
+
 def is_absolute_url(url):
     return bool(url.startswith('/') or url.startswith('http://') or url.startswith('https://'))
 
@@ -232,7 +241,6 @@ def is_from_project(cls):
 
     Args:
         cls: The class to check.
-        project_root: The root directory of your project (absolute path).
 
     Returns:
         bool: True if the class originates from the project directory, False otherwise.
@@ -243,25 +251,18 @@ def is_from_project(cls):
     if not module or not hasattr(module, "__file__"):
         return False
 
-    venv_dir = os.environ.get("VIRTUAL_ENV", "")
+    venv_dir = get_venv_path()
+    project_dir = get_path_for_django_project()
     module_path = os.path.abspath(module.__file__)
-    return module_path.startswith(
-        str(settings.BASE_DIR)
-    ) and not module_path.startswith(venv_dir)
+    return module_path.startswith(str(project_dir)) and not (
+        bool(venv_dir) and module_path.startswith(venv_dir)
+    )
 
 
 def fastdev_ignore(target):
     """A decorator to exclude a function or class from fastdev checks."""
     setattr(target, "fastdev_ignore", True)
     return target
-
-
-def get_venv_folder_name():
-    import os
-
-    path_to_venv = os.environ["VIRTUAL_ENV"]
-    venv_folder = os.path.basename(path_to_venv)
-    return venv_folder
 
 
 @cache
@@ -308,14 +309,15 @@ class FastDevConfig(AppConfig):
                     if not strict_template_checking():
                         # worry only about templates inside our project dir; if they
                         # exist elsewhere, then go to standard django behavior
-                        venv_dir = os.environ.get('VIRTUAL_ENV', '')
+                        venv_dir = get_venv_path()
+                        project_dir = get_path_for_django_project()
                         origin = context.template.origin.name
                         if (
-                            origin != '<unknown source>' and
-                            'django-fastdev/tests/' not in origin
+                            origin != '<unknown source>'
+                            and 'django-fastdev/tests/' not in origin
                             and (
-                                not origin.startswith(str(settings.BASE_DIR))
-                                or (venv_dir and origin.startswith(venv_dir))
+                                not origin.startswith(str(project_dir))
+                                or (bool(venv_dir) and origin.startswith(venv_dir))
                             )
                         ):
                             return orig_resolve(self, context, ignore_failures=ignore_failures)
@@ -409,12 +411,19 @@ The object was: {current!r}
         def fastdev_full_clean(self):
             orig_form_full_clean(self)
             # check if class is from our project, or strict form checking is enabled
-            if is_from_project(type(self)) or strict_form_checking() and not getattr(self, 'fastdev_ignore', False):
+            if (is_from_project(type(self)) or strict_form_checking()) and not getattr(
+                self, 'fastdev_ignore', False
+            ):
                 from django.conf import settings
+
                 if settings.DEBUG:
                     prefix = 'clean_'
                     for name in dir(self):
-                        if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
+                        if (
+                            name.startswith(prefix)
+                            and callable(getattr(self, name))
+                            and name[len(prefix) :] not in self.fields
+                        ):
                             fields = '\n    '.join(sorted(self.fields.keys()))
 
                             raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
