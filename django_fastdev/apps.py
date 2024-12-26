@@ -254,9 +254,13 @@ def is_from_project(cls):
     venv_dir = get_venv_path()
     project_dir = get_path_for_django_project()
     module_path = os.path.abspath(module.__file__)
-    return module_path.startswith(str(project_dir)) and not (
-        bool(venv_dir) and module_path.startswith(venv_dir)
-    )
+
+    if module_path.startswith(project_dir):
+        # check against venv after project dir matches,
+        # just in case venv resides in project dir
+        if venv_dir and module_path.startswith(venv_dir):
+            return False
+        return True
 
 
 def fastdev_ignore(target):
