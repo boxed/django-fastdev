@@ -255,10 +255,10 @@ def is_from_project(cls):
     project_dir = get_path_for_django_project()
     module_path = os.path.abspath(module.__file__)
 
-    if module_path.startswith(project_dir):
+    if module_path.startswith(str(project_dir)):
         # check against venv after project dir matches,
         # just in case venv resides in project dir
-        if venv_dir and module_path.startswith(venv_dir):
+        if venv_dir and module_path.startswith(str(venv_dir)):
             return False
         return True
 
@@ -321,7 +321,7 @@ class FastDevConfig(AppConfig):
                             and 'django-fastdev/tests/' not in origin
                             and (
                                 not origin.startswith(str(project_dir))
-                                or (bool(venv_dir) and origin.startswith(venv_dir))
+                                or (bool(venv_dir) and origin.startswith(str(venv_dir)))
                             )
                         ):
                             return orig_resolve(self, context, ignore_failures=ignore_failures)
