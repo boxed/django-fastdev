@@ -83,6 +83,56 @@ def get_gitignore_path():
         return None
 
 
+def get_venv_path():
+    """
+    Retrieve the path to the active virtual environment, if any.
+
+    Returns:
+        str or None: The path to the virtual environment, or None if not in a virtual environment.
+    """
+    # 1. check the VIRTUAL_ENV environment variable
+    venv_path = os.getenv("VIRTUAL_ENV")
+    if venv_path:
+        return os.path.abspath(venv_path)
+
+    # 2. check for `sys.real_prefix` (used by `virtualenv`)
+    if hasattr(sys, "real_prefix") and sys.real_prefix != sys.prefix:
+        return sys.real_prefix
+
+    # 3. compare `sys.base_prefix` with `sys.prefix` (used by `venv`)
+    if hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix:
+        return sys.prefix
+
+    # 4. look for `pyvenv.cfg` in parent directories of `sys.executable`
+    def find_pyvenv_cfg(start_path):
+        """
+        Recursively search for `pyvenv.cfg` in the given directory and its parents.
+
+        Args:
+            start_path (str): The directory to start searching from.
+
+        Returns:
+            str or None: The path to `pyvenv.cfg` if found, or None otherwise.
+        """
+        current_path = start_path
+        while True:
+            potential_cfg = os.path.join(current_path, "pyvenv.cfg")
+            if os.path.isfile(potential_cfg):
+                return potential_cfg
+            parent_path = os.path.dirname(current_path)
+            if parent_path == current_path:
+                break
+            current_path = parent_path
+        return None
+
+    venv_cfg_path = find_pyvenv_cfg(os.path.dirname(sys.executable))
+    if venv_cfg_path:
+        return os.path.dirname(venv_cfg_path)
+
+    # if all else fails, return None
+    return None
+
+
 def is_absolute_url(url):
     return bool(url.startswith('/') or url.startswith('http://') or url.startswith('https://'))
 
@@ -232,36 +282,35 @@ def is_from_project(cls):
 
     Args:
         cls: The class to check.
-        project_root: The root directory of your project (absolute path).
 
     Returns:
         bool: True if the class originates from the project directory, False otherwise.
     """
     module = getmodule(cls)
 
-    # check if built-in module or dynamically created class
+    # exit early if the module is built-in or dynamically created
     if not module or not hasattr(module, "__file__"):
         return False
 
-    venv_dir = os.environ.get("VIRTUAL_ENV", "")
     module_path = os.path.abspath(module.__file__)
-    return module_path.startswith(
-        str(settings.BASE_DIR)
-    ) and not module_path.startswith(venv_dir)
+    project_dir = get_path_for_django_project()
+    venv_dir = get_venv_path()
+
+    # check if the module belongs to the project directory
+    if not module_path.startswith(str(project_dir)):
+        return False
+
+    # exclude modules from the virtual environment if applicable
+    if venv_dir and module_path.startswith(str(venv_dir)):
+        return False
+
+    return True
 
 
 def fastdev_ignore(target):
     """A decorator to exclude a function or class from fastdev checks."""
     setattr(target, "fastdev_ignore", True)
     return target
-
-
-def get_venv_folder_name():
-    import os
-
-    path_to_venv = os.environ["VIRTUAL_ENV"]
-    venv_folder = os.path.basename(path_to_venv)
-    return venv_folder
 
 
 @cache
@@ -308,14 +357,15 @@ class FastDevConfig(AppConfig):
                     if not strict_template_checking():
                         # worry only about templates inside our project dir; if they
                         # exist elsewhere, then go to standard django behavior
-                        venv_dir = os.environ.get('VIRTUAL_ENV', '')
+                        venv_dir = get_venv_path()
+                        project_dir = get_path_for_django_project()
                         origin = context.template.origin.name
                         if (
-                            origin != '<unknown source>' and
-                            'django-fastdev/tests/' not in origin
+                            origin != '<unknown source>'
+                            and 'django-fastdev/tests/' not in origin
                             and (
-                                not origin.startswith(str(settings.BASE_DIR))
-                                or (venv_dir and origin.startswith(venv_dir))
+                                not origin.startswith(str(project_dir))
+                                or (bool(venv_dir) and origin.startswith(str(venv_dir)))
                             )
                         ):
                             return orig_resolve(self, context, ignore_failures=ignore_failures)
@@ -409,12 +459,19 @@ The object was: {current!r}
         def fastdev_full_clean(self):
             orig_form_full_clean(self)
             # check if class is from our project, or strict form checking is enabled
-            if is_from_project(type(self)) or strict_form_checking() and not getattr(self, 'fastdev_ignore', False):
+            if (is_from_project(type(self)) or strict_form_checking()) and not getattr(
+                self, 'fastdev_ignore', False
+            ):
                 from django.conf import settings
+
                 if settings.DEBUG:
                     prefix = 'clean_'
                     for name in dir(self):
-                        if name.startswith(prefix) and callable(getattr(self, name)) and name[len(prefix):] not in self.fields:
+                        if (
+                            name.startswith(prefix)
+                            and callable(getattr(self, name))
+                            and name[len(prefix) :] not in self.fields
+                        ):
                             fields = '\n    '.join(sorted(self.fields.keys()))
 
                             raise InvalidCleanMethod(f"""Clean method {name} of class {self.__class__.__name__} won't apply to any field. Available fields:
