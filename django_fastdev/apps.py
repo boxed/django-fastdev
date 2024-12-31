@@ -247,20 +247,23 @@ def is_from_project(cls):
     """
     module = getmodule(cls)
 
-    # check if built-in module or dynamically created class
+    # exit early if the module is built-in or dynamically created
     if not module or not hasattr(module, "__file__"):
         return False
 
-    venv_dir = get_venv_path()
-    project_dir = get_path_for_django_project()
     module_path = os.path.abspath(module.__file__)
+    project_dir = get_path_for_django_project()
+    venv_dir = get_venv_path()
 
-    if module_path.startswith(str(project_dir)):
-        # check against venv after project dir matches,
-        # just in case venv resides in project dir
-        if venv_dir and module_path.startswith(str(venv_dir)):
-            return False
-        return True
+    # check if the module belongs to the project directory
+    if not module_path.startswith(str(project_dir)):
+        return False
+
+    # exclude modules from the virtual environment if applicable
+    if venv_dir and module_path.startswith(str(venv_dir)):
+        return False
+
+    return True
 
 
 def fastdev_ignore(target):
