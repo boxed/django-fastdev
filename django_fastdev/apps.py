@@ -84,7 +84,55 @@ def get_gitignore_path():
 
 
 def get_venv_path():
-    return os.environ.get("VIRTUAL_ENV", None)
+    """
+    Retrieve the path to the active virtual environment, if any.
+
+    Returns:
+        str or None: The path to the virtual environment, or None if not in a virtual environment.
+    """
+    # 1. check the VIRTUAL_ENV environment variable
+    venv_path = os.getenv("VIRTUAL_ENV")
+    if venv_path:
+        return os.path.abspath(venv_path)
+
+    # 2. check for `sys.real_prefix` (used by `virtualenv`)
+    if hasattr(sys, "real_prefix") and sys.real_prefix != sys.prefix:
+        return sys.real_prefix
+
+    # 3. compare `sys.base_prefix` with `sys.prefix` (used by `venv`)
+    if hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix:
+        return sys.prefix
+
+    # 4. look for `pyvenv.cfg` in parent directories of `sys.executable`
+    venv_cfg_path = find_pyvenv_cfg(os.path.dirname(sys.executable))
+    if venv_cfg_path:
+        return os.path.dirname(venv_cfg_path)
+
+    # if all else fails, return None
+    return None
+
+
+def find_pyvenv_cfg(start_path):
+    """
+    Recursively search for `pyvenv.cfg` in the given directory and its parents.
+
+    Args:
+        start_path (str): The directory to start searching from.
+
+    Returns:
+        str or None: The path to `pyvenv.cfg` if found, or None otherwise.
+    """
+    current_path = start_path
+    while True:
+        potential_cfg = os.path.join(current_path, "pyvenv.cfg")
+        if os.path.isfile(potential_cfg):
+            return potential_cfg
+        parent_path = os.path.dirname(current_path)
+        if parent_path == current_path:
+            break
+        current_path = parent_path
+    return None
+
 
 
 def get_venv_folder_name():
