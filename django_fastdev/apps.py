@@ -104,40 +104,33 @@ def get_venv_path():
         return sys.prefix
 
     # 4. look for `pyvenv.cfg` in parent directories of `sys.executable`
+    def find_pyvenv_cfg(start_path):
+        """
+        Recursively search for `pyvenv.cfg` in the given directory and its parents.
+
+        Args:
+            start_path (str): The directory to start searching from.
+
+        Returns:
+            str or None: The path to `pyvenv.cfg` if found, or None otherwise.
+        """
+        current_path = start_path
+        while True:
+            potential_cfg = os.path.join(current_path, "pyvenv.cfg")
+            if os.path.isfile(potential_cfg):
+                return potential_cfg
+            parent_path = os.path.dirname(current_path)
+            if parent_path == current_path:
+                break
+            current_path = parent_path
+        return None
+
     venv_cfg_path = find_pyvenv_cfg(os.path.dirname(sys.executable))
     if venv_cfg_path:
         return os.path.dirname(venv_cfg_path)
 
     # if all else fails, return None
     return None
-
-
-def find_pyvenv_cfg(start_path):
-    """
-    Recursively search for `pyvenv.cfg` in the given directory and its parents.
-
-    Args:
-        start_path (str): The directory to start searching from.
-
-    Returns:
-        str or None: The path to `pyvenv.cfg` if found, or None otherwise.
-    """
-    current_path = start_path
-    while True:
-        potential_cfg = os.path.join(current_path, "pyvenv.cfg")
-        if os.path.isfile(potential_cfg):
-            return potential_cfg
-        parent_path = os.path.dirname(current_path)
-        if parent_path == current_path:
-            break
-        current_path = parent_path
-    return None
-
-
-
-def get_venv_folder_name():
-    venv_path = get_venv_path()
-    return os.path.basename(venv_path) if venv_path else venv_path
 
 
 def is_absolute_url(url):
