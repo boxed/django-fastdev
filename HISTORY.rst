@@ -88,7 +88,7 @@ Changelog
 
 * Warn if you use `{% if %}` to check for existance of a variable (really warn if it triggers false if the lookup fails)
 
-* New setting: `FASTDEV_STRICT_IF`. Set this to `True` to make `{% if %}` crash on non-existant variables. This setting will very likely break some of the Django admin, because it relies on this behavior!
+* New setting: `FASTDEV_STRICT_IF`. Set this to `True` to make `{% if %}` crash on non-existent variables. This setting will very likely break some of the Django admin, because it relies on this behavior!
 
 
 * Check that the venv and pycache stuff is in .gitignore
@@ -97,7 +97,7 @@ Changelog
 1.6.0
 ~~~~~
 
-* Non-existant variable accessed inside an `{% if %}` didn't crash.
+* Non-existent variable accessed inside an `{% if %}` didn't crash.
 
 * Warning on invalid fk field name. So for example using `car_id = ForeignKey(Car)` will now warn and explain what you should do.
 
