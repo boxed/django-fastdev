@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 import threading
+import importlib
 from functools import cache
 from inspect import getmodule
 from typing import Optional
@@ -548,6 +549,10 @@ The object was: {current!r}
         def collect_valid_blocks(template, context):
             result = set()
             for x in template.nodelist:
+                if getattr(settings, 'FASTDEV_INVALID_BLOCKS_CALLBACK', False) is not False:
+                    module, callback = settings.FASTDEV_INVALID_BLOCKS_CALLBACK.rsplit(".", 1)
+                    module = importlib.import_module(module)
+                    result = getattr(module, callback)(x, result)
                 if isinstance(x, ExtendsNode):
                     result |= collect_nested_blocks(x)
                     result |= collect_valid_blocks(get_extends_node_parent(x, context), context)

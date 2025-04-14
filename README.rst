@@ -105,6 +105,20 @@ Django will silently throw away `hello!` because you wrote :code:`contents` inst
 of :code:`content`. :code:`django-fastdev` will turn this into an error which lists the
 invalid and valid block names in alphabetical order.
 
+You can customize the filter to understand also custom blocks in your `settings.py` file in this way (an example to integrate [Unfold](https://github.com/unfoldadmin/django-unfold)):
+
+settings.py:
+
+```
+FASTDEV_INVALID_BLOCKS_CALLBACK = "your_app.settings.fastdev_blocks"
+
+def fastdev_blocks(x, result):
+    if hasattr(x, 'varname') and x.varname is not None:
+        result.add(x.varname)
+        result.add(x.varname.replace('_', '-'))
+    return result
+```
+
 Better error messages for reverse
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
