@@ -350,10 +350,17 @@ class FastDevConfig(AppConfig):
 
             if isinstance(self.var, Variable):
                 try:
-                    self.var.resolve(context)
+                    return self.var.resolve(context)
                 except FastDevVariableDoesNotExist:
                     raise
                 except VariableDoesNotExist as e:
+                    # If the filter includes default_if_none, suppress the exception and return None
+                    if any(
+                        filter_func.func.__name__ == 'default_if_none'
+                        for filter_name, filter_func in self.filters
+                    ):
+                        return None
+
                     if not strict_template_checking():
                         # worry only about templates inside our project dir; if they
                         # exist elsewhere, then go to standard django behavior
