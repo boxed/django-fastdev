@@ -35,6 +35,10 @@ from django.template.defaulttags import (
     IfNode,
     ForNode
 )
+from django.template.defaultfilters import (
+    default,
+    default_if_none,
+)
 from django.template.loader_tags import (
     BlockNode,
     ExtendsNode,
@@ -350,14 +354,15 @@ class FastDevConfig(AppConfig):
 
             if isinstance(self.var, Variable):
                 try:
-                    return self.var.resolve(context)
+                    self.var.resolve(context)
                 except FastDevVariableDoesNotExist:
                     raise
                 except VariableDoesNotExist as e:
-                    # If the filter includes default_if_none, suppress the exception and return None
+                    # If the filter includes default or default_if_none, suppress
+                    # the exception and return None
                     if any(
-                        filter_func.func.__name__ == 'default_if_none'
-                        for filter_name, filter_func in self.filters
+                        filter in (default, default_if_none)
+                        for filter, args in self.filters
                     ):
                         return None
 
