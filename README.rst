@@ -38,6 +38,8 @@ There are more specialized error messages for when you try to access the content
 
 By default, :code:`django-fastdev` only checks templates that exist within your project directory. If you want it to check ALL templates, including stock django templates and templates from third party libraries, add :code:`FASTDEV_STRICT_TEMPLATE_CHECKING = True` to your project :code:`settings.py`.
 
+Variable access inside :code:`{% if %}` will not crash unless the setting :code:`FASTDEV_STRICT_IF` is set to :code:`True`. If you use this setting and want to check for existence of a variable, use :code:`{% ifexists %}` from the fastdev template tag library.
+
 
 Improved TemplateDoesNotExist errors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
