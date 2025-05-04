@@ -46,8 +46,8 @@ When using the :code:`default` or :code:`default_if_none` filters, :code:`django
     {{ does_not_exist|default_if_none:"" }}
 
 In these cases:
-- If :code:`does_not_exist` is undefined, :code:`default:"N/A"` will render as :code:`N/A`, and :code:`default_if_none:""` will render as an empty string (:code:`""`).
-- This ensures that templates using these filters handle missing variables gracefully, aligning with Django's built-in behavior while maintaining :code:`django-fastdev`'s strict checking for other cases.
+  * If :code:`does_not_exist` is undefined, :code:`default:"N/A"` will render as :code:`N/A`, and :code:`default_if_none:""` will render as an empty string (:code:`""`).
+  * This ensures that templates using these filters handle missing variables gracefully, aligning with Django's built-in behavior while maintaining :code:`django-fastdev`'s strict checking for other cases.
 
 By default, :code:`django-fastdev` only checks templates that exist within your project directory. To check ALL templates, including stock Django templates and templates from third-party libraries, add :code:`FASTDEV_STRICT_TEMPLATE_CHECKING = True` to your project :code:`settings.py`.
 
