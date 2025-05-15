@@ -361,10 +361,10 @@ class FastDevConfig(AppConfig):
                     # If the filter includes default or default_if_none, suppress
                     # the exception and return None
                     if any(
-                        filter in (default, default_if_none)
+                        filter == default
                         for filter, args in self.filters
                     ):
-                        return None
+                        return orig_resolve(self, context)
 
                     if not strict_template_checking():
                         # worry only about templates inside our project dir; if they
