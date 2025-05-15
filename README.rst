@@ -10,13 +10,13 @@ Features
 Error on non-existent template variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Django templates by default hide errors, and when it does show an error it's often not very helpful. This app will change this so that if you do:
+Django templates by default hide errors, and when it does show an error it's often not very helpful. This app changes this behavior to provide more informative error messages. For example, if you use:
 
 .. code:: html
 
     {{ does_not_exist }}
 
-instead of rendering that as an empty string, this app will give you an error message:
+instead of rendering that as an empty string, this app will raise a :code:`FastDevVariableDoesNotExist` error with a detailed message:
 
 .. code::
 
@@ -34,17 +34,29 @@ instead of rendering that as an empty string, this app will give you an error me
         request
         user
 
-There are more specialized error messages for when you try to access the contents of a :code:`dict`, and attributes of an object a few levels deep like :code:`foo.bar.baz` (where baz doesn't exist).
+There are more specialized error messages for accessing non-existent keys in a :code:`dict` or attributes of an object several levels deep, such as :code:`foo.bar.baz` (where :code:`baz` doesn't exist).
 
-By default, :code:`django-fastdev` only checks templates that exist within your project directory. If you want it to check ALL templates, including stock django templates and templates from third party libraries, add :code:`FASTDEV_STRICT_TEMPLATE_CHECKING = True` to your project :code:`settings.py`.
+**Handling `default` and `default_if_none` Filters**
 
-Variable access inside :code:`{% if %}` will not crash unless the setting :code:`FASTDEV_STRICT_IF` is set to :code:`True`. If you use this setting and want to check for existence of a variable, use :code:`{% ifexists %}` from the fastdev template tag library.
+When using the :code:`default` or :code:`default_if_none` filters, :code:`django-fastdev` will not raise an exception for non-existent variables. Instead, it behaves as one might intuitively expect by populating the context variable with the result of the filter operation. For example:
+
+.. code:: html
+
+    {{ does_not_exist|default:"N/A" }}
+    {{ does_not_exist|default_if_none:"" }}
+
+In these cases:
+  * If :code:`does_not_exist` is undefined, :code:`default:"N/A"` will render as :code:`N/A`, and :code:`default_if_none:""` will render as an empty string (:code:`""`).
+  * This ensures that templates using these filters handle missing variables gracefully, aligning with Django's built-in behavior while maintaining :code:`django-fastdev`'s strict checking for other cases.
+
+By default, :code:`django-fastdev` only checks templates that exist within your project directory. To check ALL templates, including stock Django templates and templates from third-party libraries, add :code:`FASTDEV_STRICT_TEMPLATE_CHECKING = True` to your project :code:`settings.py`.
 
 
 Improved TemplateDoesNotExist errors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Good suggestions for what you wanted to do, and a complete list of all valid values makes it very easy to fix `TemplateDoesNotExist` errors.
+
 
 NoReverseMatch errors
 ~~~~~~~~~~~~~~~~~~~~~
@@ -104,6 +116,7 @@ and then write a template like this:
 Django will silently throw away `hello!` because you wrote :code:`contents` instead
 of :code:`content`. :code:`django-fastdev` will turn this into an error which lists the
 invalid and valid block names in alphabetical order.
+
 
 Better error messages for reverse
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

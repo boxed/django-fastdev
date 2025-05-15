@@ -35,6 +35,10 @@ from django.template.defaulttags import (
     IfNode,
     ForNode
 )
+from django.template.defaultfilters import (
+    default,
+    default_if_none,
+)
 from django.template.loader_tags import (
     BlockNode,
     ExtendsNode,
@@ -354,6 +358,14 @@ class FastDevConfig(AppConfig):
                 except FastDevVariableDoesNotExist:
                     raise
                 except VariableDoesNotExist as e:
+                    # If the filter includes default or default_if_none, suppress
+                    # the exception and return None
+                    if any(
+                        filter == default
+                        for filter, args in self.filters
+                    ):
+                        return orig_resolve(self, context)
+
                     if not strict_template_checking():
                         # worry only about templates inside our project dir; if they
                         # exist elsewhere, then go to standard django behavior
